@@ -6,7 +6,7 @@
 | 1 Foundation | **Done**: CI green incl. `docker compose up` + smoke tests (run 44924202637) | 2026-11-21 |
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
-| 4 GPS tracking | **Implemented and verified locally**; awaiting its CI run | 2026-11-21 |
+| 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
 | 5 Driver app & offline | Not started | — |
 | 6 Customer & operations | Not started | — |
 | 7 Infrastructure & deployment | Not started | — |
@@ -366,6 +366,13 @@ PASS  trip track contains all stored points incl. the flagged one
 12/12 live checks passed
 ```
 Note: the upload and feed requests took about 2 s each on this memory-constrained Windows workstation (cold processes). The target holds; the Phase 8 load test will measure real latency (300 trucks + 100 office users).
+
+### CI
+- First run on `99fa7ca` failed at "Module boundary contracts are up to date": the new private module
+  `tracking/archive.py` changed the generated `.importlinter`, which was not regenerated before pushing.
+- Fixed in `06f3395` (regenerated contracts committed) and added `scripts/check_backend.sh`, which runs
+  exactly the CI backend steps locally. Run 44960946917: all five jobs green
+  (https://github.com/Ahmed0814/corridor/actions/runs/44960946917).
 
 ### Not in Phase 4 (by design)
 - Driver app capture and offline queue: Phase 5. Geofences, checkpoints, border-arrival from GPS, route deviation, ETA: Phase 6.
