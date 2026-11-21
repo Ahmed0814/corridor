@@ -68,8 +68,8 @@ services:
     volumes:
       - ./docker/elasticmq.conf:/opt/elasticmq.conf:ro
     healthcheck:
-      # The image has no curl/wget; probe the SQS port from bash.
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9324' || exit 1"]
+      # Alpine image without bash: use busybox wget against the SQS ListQueues action.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9324/?Action=ListQueues"]
       interval: 5s
       timeout: 3s
       retries: 20
