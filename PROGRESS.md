@@ -3,8 +3,8 @@
 | Phase | Status | Date |
 |---|---|---|
 | 0 Discovery & architecture | **Done** (DoD evidence below) | 2026-11-20 |
-| 1 Foundation | **Implemented. DoD partially verified**: compose + CI items await a first CI run or Docker (see Phase 1) | 2026-11-21 |
-| 2 Security & tenancy | **Implemented. DoD met except real Cognito login** (needs credentials) and its first CI run | 2026-11-21 |
+| 1 Foundation | **Done**: CI green incl. `docker compose up` + smoke tests (run 44924202637) | 2026-11-21 |
+| 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
 | 3 Core logistics | Not started | — |
 | 4 GPS tracking | Not started | — |
 | 5 Driver app & offline | Not started | — |
@@ -78,12 +78,24 @@ missing:
 ### Definition of Done — status
 | Criterion | Status | Evidence |
 |---|---|---|
-| `docker compose up` starts api, realtime, worker, beat, Postgres+PostGIS, Redis and web | **NOT YET VERIFIED** | No Docker on this workstation. The compose file and smoke script are written, and the CI `compose` job runs them, but they have **never run**. Equivalent processes were run natively (below), except worker/beat. |
-| CI runs lint, type check, makemigrations --check and tests on every push, and passes | **NOT YET VERIFIED** | The workflow is written, but the repo has no GitHub remote and no commits yet. Every CI command was run locally with the results below. |
+| `docker compose up` starts api, realtime, worker, beat, Postgres+PostGIS, Redis and web | **Verified in CI** (compose job, run 44924202637: Start the stack + 9 smoke checks incl. beat → SQS → worker heartbeat) | No Docker on this workstation. The compose file and smoke script are written, and the CI `compose` job runs them, but they have **never run**. Equivalent processes were run natively (below), except worker/beat. |
+| CI runs lint, type check, makemigrations --check and tests on every push, and passes | **Verified**: all 5 jobs green on `18eb72e` (run 44924202637) | The workflow is written, but the repo has no GitHub remote and no commits yet. Every CI command was run locally with the results below. |
 | Structured logging works | **Verified locally** | Tests + a live uvicorn process (below) |
 | Sentry works | **Verified with an in-memory transport** | No real DSN exists (Needs credentials). Capture, request_id tag, scrubbing and data policy are tested. |
 
-Phase 1 closes when the first CI run on GitHub is green (backend, web, mobile, secrets, compose).
+Phase 1 closed on 2026-11-21: https://github.com/Ahmed0814/corridor/actions/runs/44924202637 is green.
+
+### CI history (first runs on GitHub; each failure was a real issue, fixed)
+| Run commit | Failed step | Cause | Fix |
+|---|---|---|---|
+| `3eaf688` | backend: mypy | `os.add_dll_directory` is Windows-only, so the Linux type check failed | `sys.platform` guard |
+| `5a28cd5` | backend: Django checks | `gis.W001`: GDAL < 3.9 cannot block file/network access (Ubuntu 3.8, bookworm 3.6) | Debian trixie GDAL 3.10 in image and CI (D-041) |
+| `0d639ab` | compose: start | ElasticMQ health check used bash, which the Alpine image lacks | busybox `wget` probe |
+| `39e1af3` | compose: smoke tests | script stored as non-executable (Windows git) | `git update-index --chmod=+x` |
+| `41c89fa` | backend image scan | zlib CVE-2026-85091 in the base image | `apt-get upgrade` in the image |
+| `7934442` | backend image scan | secret scanner: example key in autobahn's docstring | narrow `skip-files` (verified false positive) |
+| `a13b66b`, `b976da8`, `cc203b8` | web image scan | npm bundled in the node base image: undici 6.28.0 (4 HIGH), brace-expansion 5.0.9 (2 HIGH) | remove package managers from the runtime image (D-050); findings now published as annotations |
+| `18eb72e` | — | **all green** | — |
 
 ### Verification (real output, 2026-11-21, Windows workstation, portable Postgres 16.16 + PostGIS 3.7, Redis running)
 
@@ -143,7 +155,7 @@ Not run locally: smoke check 8 (beat -> SQS -> worker heartbeat), which needs El
 
 ### Phase 1 open items
 - Push to GitHub and get the first green CI run. This closes the two unverified DoD rows. The compose job's Trivy scan may flag base-image CVEs on first run.
-- Mobile lint (`expo lint`) is not configured yet (its first run is interactive). To be added in Phase 5 along with mobile tests and Sentry for React Native.
+- ~~Mobile lint~~: done (ESLint with eslint-config-expo, fails on warnings, runs in CI). Sentry for React Native remains for Phase 5.
 
 ---
 
@@ -219,12 +231,12 @@ PASS  driver cannot list the company's members  status=403 code=forbidden
 ### Not verified / open
 - **Real Cognito**: hosted UI, TOTP enrollment, phone verification and Cognito's token claims. Needs a user pool per environment (Needs credentials).
 - **Driver app on a device or emulator**: the sign-in was verified at the HTTP level only. The browser hand-off and secure storage need an Expo development build (Phase 5 device plan).
-- **First CI run of Phase 2**: not pushed yet.
+- ~~First CI run of Phase 2~~: green (run 44924202637), including migrations as `corridor_migrator`, tests as `corridor_app`, and compose with the role bootstrap.
 
 ---
 
 ## Open issues
-1. **Docker is not installed** on this workstation. Mitigated by D-032 (portable Postgres/PostGIS/Redis for local tests) and the CI compose job. **Action for human:** create a GitHub repository and push (closes Phase 1), or install Docker Desktop with WSL2 to run `docker compose up` locally.
+1. **Docker is not installed** on this workstation. Mitigated by D-032 (portable Postgres/PostGIS/Redis for local tests) and the CI compose job, which is green. Optional: install Docker Desktop with WSL2 to run `docker compose up` locally.
 2. **Terraform is not installed** locally. Not needed until Phase 7.
 3. Local Python is 3.13.15. The brief fixes 3.12, so containers and CI will use 3.12 (D-004).
 4. `D:\` contains an unrelated git repository with an ownership mismatch. `D:\corridor` now has its own repository (D-030). No commits have been made yet.
