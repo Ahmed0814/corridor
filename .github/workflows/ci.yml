@@ -189,6 +189,29 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+      - name: Report scan findings as annotations
+        # Job logs need admin rights to download; annotations are public. Each finding becomes
+        # one annotation (package, CVE, installed -> fixed version, or secret rule and file),
+        # so a failed scan can be diagnosed from the run page or the API without the raw log.
+        if: failure()
+        run: |
+          AUTOBAHN_SKIP="/opt/venv/lib/python3.12/site-packages/autobahn/wamp/cryptosign.py,/opt/venv/lib/python3.12/site-packages/autobahn/wamp/__pycache__/cryptosign.cpython-312.pyc"
+          if command -v trivy >/dev/null; then
+            TRIVY="trivy"
+          else
+            TRIVY="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/out -w /out aquasec/trivy:0.70.0"
+          fi
+          for img in corridor-backend:dev corridor-web:dev; do
+            $TRIVY image --quiet --severity HIGH,CRITICAL --ignore-unfixed --skip-files "$AUTOBAHN_SKIP" \
+              --format json --output "trivy-report.json" "$img" || true
+            jq -r --arg img "$img" '
+              .Results[]? | .Target as $t |
+              ((.Vulnerabilities // [])[] |
+                "::error title=\($img) vulnerability::\(.Severity) \(.VulnerabilityID) in \(.PkgName) \(.InstalledVersion) (fixed in \(.FixedVersion)) [\($t)]"),
+              ((.Secrets // [])[] |
+                "::error title=\($img) secret::\(.Severity) \(.RuleID) (\(.Title)) at \($t):\(.StartLine)-\(.EndLine)")
+            ' trivy-report.json || echo "::warning::could not parse the Trivy report for $img"
+          done
       - name: Logs on failure
         if: failure()
         run: docker compose logs --no-color --tail 200
