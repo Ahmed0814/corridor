@@ -50,7 +50,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "DJ", "RUF", "SIM", "T20"]
 ignore = ["RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106", "E501"]
+"tests/**" = ["S101", "S105", "S106", "E501", "F811"]  # F811: shared pytest fixtures are imported by name
 "**/tests/**" = ["S101", "S105", "S106"]
 
 # ---------------------------------------------------------------- mypy

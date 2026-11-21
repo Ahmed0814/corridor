@@ -18,6 +18,7 @@ from corridor.identity.api import router as identity_router
 from corridor.identity.services import PUBLIC_ATTR
 from corridor.shipments.api import router as shipments_router
 from corridor.tenants.api import router as tenants_router
+from corridor.tracking.api import router as tracking_router
 from corridor.trips.api import router as trips_router
 
 __all__ = ["api"]
@@ -38,5 +39,6 @@ for _router in (
     shipments_router,
     trips_router,
     dispatch_router,
+    tracking_router,  # Phase 4
 ):
     api.add_router("", _router)

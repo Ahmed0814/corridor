@@ -61,6 +61,11 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-054 | License lookup hash ignores case, spaces and punctuation | Decided |
 | D-055 | Delivery in Phase 3 needs status + recipient; evidence in Phase 6 | Decided |
 | D-056 | Ops screens use server actions with per-form idempotency keys | Decided |
+| D-057 | GPS device bound to the tracking session by the first upload | Decided |
+| D-058 | Partition maintenance and retention via narrow SECURITY DEFINER functions | Decided (drop needs approval) |
+| D-059 | Live map polls a same-origin feed every 5 s (WebSocket push server-side) | Decided (revisit) |
+| D-060 | Development basemap: MapLibre demo tiles, configurable | Decided |
+| D-061 | GPS validation limits | Decided |
 
 ---
 
@@ -237,3 +242,18 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-056 Ops screens use server actions with per-form idempotency keys
 **Choice:** the operations screens are server-rendered pages. Forms post to Next.js server actions that call the API with the user's session, and work without client JavaScript. Each rendered form carries a fresh `Idempotency-Key`, so a double click or resubmit replays the first result (tested over HTTP: one form submitted twice creates one customer). API errors come back as `?error=<code>&ref=<request id>` and are shown on the page. Which action buttons appear mirrors the state machine and the user's permissions (unit-tested), but the API stays the authority. **Trade-off:** full page reloads instead of in-place updates, which is acceptable for back-office forms.
+
+## D-057 GPS device bound to the tracking session by the first upload
+**Context:** A tracking session opens when the trip starts. That may be done by a dispatcher on the driver's behalf, who does not know the phone's install id. **Choice:** the session's `device_id` is set by the first accepted upload; later uploads from any other device are rejected with `device_mismatch` (tested). Together with "only the assigned driver's account may ingest", this stops a second phone, or another user, from writing into a trip. **Trade-off:** a driver who changes phones mid-trip needs a new session (end and restart, or an office action in a later phase).
+
+## D-058 Partition maintenance and retention via narrow SECURITY DEFINER functions
+**Context:** Creating and dropping partitions needs table ownership, which no runtime role has (D-007), and dropping deletes data, which needs approval (MASTER_PROMPT §0.3). **Choice:** `gps_ensure_partitions`, `gps_partitions`, `gps_partition_export`, `gps_drop_partition` and `gps_create_month_partition` are owned by `corridor_owner` and executable only by `corridor_relay`. Each validates its input: the export and the drop refuse any partition inside the retention window. Every partition (and the default) has forced RLS, the tenant policy, and an owner-only read policy for the export. The daily beat job creates partitions 12 months back to 3 months ahead, exports expired partitions to the archive (gzip JSON lines + manifest with row count and SHA-256), re-verifies the archive, and drops only if `GPS_RETENTION_DROP_ENABLED=true`. Otherwise it logs `gps_partition_drop_pending_approval`. The S3 archive adapter needs credentials (Phase 7). **Found while testing:** without the owner read policy, FORCE RLS made the export return 0 rows. Archives would have been empty, which is why the verify step exists. **Trade-off:** one extra policy on GPS tables, readable only by the NOLOGIN owner role.
+
+## D-059 Live map polls a same-origin feed every 5 s (WebSocket push server-side)
+**Context:** The browser never holds the access token (HttpOnly cookie, D-006), so it cannot authenticate the `/ws/v1/tracking/` socket directly. **Choice:** the API pushes every newly trusted position to the tenant's fleet group right after commit (measured: 16 ms in tests, immediate on the live stack). The web map polls `/ops/map/fleet` (a server route that calls the API with the cookie) every 5 s, so a position is visible within receipt + 5 s, inside the 10 s target. If polls stop succeeding, the map shows a banner and keeps ageing the positions; it never shows them as live. **Revisit:** a short-lived, single-use WebSocket ticket endpoint to switch the browser to push.
+
+## D-060 Development basemap: MapLibre demo tiles, configurable
+**Choice:** `NEXT_PUBLIC_MAP_STYLE_URL` selects the style. The development default is MapLibre's public demo style (low detail, intended for demos). The map labels it as development tiles. Production points it at the self-hosted PMTiles style (D-028); OpenStreetMap's public tile servers are not used. **Trade-off:** low-detail basemap until Phase 7.
+
+## D-061 GPS validation limits
+**Choice (tenant-independent):** reject coordinates outside ±90/±180 and (0, 0); reject accuracy outside 0–100 km; reject timestamps without a timezone, more than 5 min in the future, or older than the 12-month retention window; reject without an authorized session, on vehicle or device mismatch, and on reused event ids. Flag (stored, never the latest) accuracy over 100 m, out-of-order points (recorded at or before the current latest), implied speed over 150 km/h, and clocks ahead by more than 60 s. Informational flags: while paused, uploaded more than 1 h late, network (non-GPS) fix. A closed session accepts late uploads for 24 h, only for points recorded while it was open (D-013). **Trade-off:** fixed limits; tenant-tunable later if pilots need it.

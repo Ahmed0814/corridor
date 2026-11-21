@@ -136,6 +136,13 @@ for _alias, _cfg in DATABASES.items():
     _cfg["CONN_HEALTH_CHECKS"] = True
 DATABASE_ROUTERS = ["corridor.core.platform.DefaultOnlyRouter"]
 
+# --------------------------------------------------------------------------- GPS retention (D-058)
+GPS_RETENTION_MONTHS: int = env.int("GPS_RETENTION_MONTHS", default=12)
+# Dropping archived partitions deletes data: off unless explicitly enabled (approval, MASTER_PROMPT §0.3).
+GPS_RETENTION_DROP_ENABLED: bool = env.bool("GPS_RETENTION_DROP_ENABLED", default=False)
+GPS_ARCHIVE_BACKEND: str = env.str("GPS_ARCHIVE_BACKEND", default="local" if IS_LOCAL else "s3")
+GPS_ARCHIVE_DIR: str = env.str("GPS_ARCHIVE_DIR", default=str(BASE_DIR / ".gps-archive"))
+
 # --------------------------------------------------------------------------- field encryption
 # Application-level encryption of sensitive fields such as driver license numbers (D-019).
 # Comma-separated Fernet keys, newest first (rotation: prepend a new key, re-encrypt, drop old).

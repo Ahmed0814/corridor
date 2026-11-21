@@ -64,7 +64,8 @@
       "shipments": "Shipments",
       "dispatch": "Dispatch",
       "fleet": "Fleet",
-      "customers": "Customers"
+      "customers": "Customers",
+      "map": "Live map"
     },
     "common": {
       "create": "Create",
@@ -175,6 +176,24 @@
     "errors": {
       "generic": "The action failed.",
       "reference": "Reference: {id}"
+    },
+    "map": {
+      "title": "Live map",
+      "intro": "Latest trusted position of each vehicle. Colours show how fresh each position is.",
+      "live": "Live",
+      "delayed": "Delayed",
+      "stale": "Stale",
+      "offline": "Offline",
+      "vehicle": "Vehicle",
+      "freshness": "Freshness",
+      "recorded": "Recorded",
+      "received": "Received",
+      "accuracy": "Accuracy",
+      "age": "Age",
+      "none": "No vehicle has reported a position yet.",
+      "feedStale": "Live updates are not arriving. The map shows the last data received at {time}; positions keep ageing.",
+      "updated": "Updated {time}",
+      "basemap": "Base map: development tiles. Production uses self-hosted tiles."
     }
   }
 }

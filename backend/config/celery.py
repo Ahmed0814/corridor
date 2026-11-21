@@ -29,6 +29,8 @@ app.conf.update(
         "heartbeat": {"task": "corridor.events.tasks.heartbeat", "schedule": 60.0},
         # Transactional outbox -> SQS (D-014, D-051). Business events, not GPS.
         "relay-outbox": {"task": "corridor.events.tasks.relay_outbox", "schedule": 5.0},
+        # GPS partitions ahead + retention archive (drops need approval, D-058).
+        "gps-maintenance": {"task": "corridor.tracking.tasks.gps_maintenance", "schedule": 86400.0},
     },
 )
 app.autodiscover_tasks()

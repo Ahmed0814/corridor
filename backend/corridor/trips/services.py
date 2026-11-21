@@ -7,7 +7,7 @@
 Only the assigned driver starts/pauses/completes their trip; an office user may act on their behalf
 with ``trips.act_on_behalf`` and a reason. Conflicting assignments are stopped by partial unique
 indexes, so a concurrent race has exactly one winner (409 ``assignment_conflict`` for the other).
-Opening the GPS tracking session on start arrives with tracking (Phase 4).
+Starting a trip opens its GPS tracking session; completing or aborting closes it (Phase 4).
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from corridor.events import services as events
 from corridor.fleet import services as fleet
 from corridor.identity.schemas import RequestContext, Scope
 from corridor.shipments import services as shipments
+from corridor.tracking import services as tracking
 from corridor.trips.models import OPEN_STATUSES, Trip, TripAssignment, TripEvent, TripShipment, TripStatus
 from corridor.trips.schemas import (
     AssignIn,
@@ -283,6 +284,8 @@ def start_trip(ctx: RequestContext, trip_id: uuid.UUID, reason: str = "") -> Tri
     _transition(t, T.IN_PROGRESS, "started", ctx, reason=reason)
     shipments.mark_in_transit_for_trip(ctx, sids, t.id)
     a = _active_assignment(t.id)
+    if a is not None:
+        tracking.open_session(t.id, a.driver_id, a.vehicle_id)  # GPS accepted only inside it (D-013)
     _outbox(
         "trip.started",
         t,
@@ -296,6 +299,7 @@ def pause_trip(ctx: RequestContext, trip_id: uuid.UUID, reason: str = "") -> Tri
     t = lock(_visible(ctx), trip_id)
     assert_state(t.status, (T.IN_PROGRESS,), "pause")
     _transition(t, T.PAUSED, "paused", ctx, reason=_authorize_driver_action(ctx, t, reason))
+    tracking.set_session_paused(t.id, True)
     return _out(t)
 
 
@@ -303,6 +307,7 @@ def resume_trip(ctx: RequestContext, trip_id: uuid.UUID, reason: str = "") -> Tr
     t = lock(_visible(ctx), trip_id)
     assert_state(t.status, (T.PAUSED,), "resume")
     _transition(t, T.IN_PROGRESS, "resumed", ctx, reason=_authorize_driver_action(ctx, t, reason))
+    tracking.set_session_paused(t.id, False)
     return _out(t)
 
 
@@ -313,6 +318,7 @@ def complete_trip(ctx: RequestContext, trip_id: uuid.UUID, reason: str = "") -> 
     t.completed_at = timezone.now()
     _release(t)
     _transition(t, T.COMPLETED, "completed", ctx, reason=reason)
+    tracking.close_session(t.id)
     _outbox("trip.completed", t)
     return _out(t)
 
@@ -325,6 +331,7 @@ def abort_trip(ctx: RequestContext, trip_id: uuid.UUID, reason: str) -> TripOut:
     t.completed_at = timezone.now()
     _release(t)
     _transition(t, T.ABORTED, "aborted", ctx, reason=require_reason(reason))
+    tracking.close_session(t.id)
     return _out(t)
 
 

@@ -64,7 +64,8 @@
       "shipments": "Expéditions",
       "dispatch": "Affectation",
       "fleet": "Flotte",
-      "customers": "Clients"
+      "customers": "Clients",
+      "map": "Carte en direct"
     },
     "common": {
       "create": "Créer",
@@ -175,6 +176,24 @@
     "errors": {
       "generic": "L’action a échoué.",
       "reference": "Référence : {id}"
+    },
+    "map": {
+      "title": "Carte en direct",
+      "intro": "Dernière position fiable de chaque véhicule. Les couleurs indiquent la fraîcheur de chaque position.",
+      "live": "En direct",
+      "delayed": "Retardée",
+      "stale": "Ancienne",
+      "offline": "Hors ligne",
+      "vehicle": "Véhicule",
+      "freshness": "Fraîcheur",
+      "recorded": "Enregistrée",
+      "received": "Reçue",
+      "accuracy": "Précision",
+      "age": "Âge",
+      "none": "Aucun véhicule n’a encore transmis de position.",
+      "feedStale": "Les mises à jour en direct n’arrivent plus. La carte affiche les dernières données reçues à {time} ; les positions continuent de vieillir.",
+      "updated": "Mis à jour {time}",
+      "basemap": "Fond de carte : tuiles de développement. La production utilise des tuiles auto-hébergées."
     }
   }
 }

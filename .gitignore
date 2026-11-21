@@ -42,3 +42,4 @@ Thumbs.db
 # Local portable dev tools (Postgres/PostGIS, Redis) — see docs/development.md
 .devtools/
 backend/staticfiles/
+backend/.gps-archive/

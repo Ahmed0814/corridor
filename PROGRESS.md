@@ -6,7 +6,7 @@
 | 1 Foundation | **Done**: CI green incl. `docker compose up` + smoke tests (run 44924202637) | 2026-11-21 |
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
-| 4 GPS tracking | Not started | — |
+| 4 GPS tracking | **Implemented and verified locally**; awaiting its CI run | 2026-11-21 |
 | 5 Driver app & offline | Not started | — |
 | 6 Customer & operations | Not started | — |
 | 7 Infrastructure & deployment | Not started | — |
@@ -309,6 +309,71 @@ docker compose up with the relay role + smoke tests + Trivy on both images).
 
 ---
 
+## Phase 4 — GPS tracking
+
+### What was built
+- **Tracking sessions**: opened when a trip starts (same transaction), paused/resumed with the trip, closed on complete/abort; outbox events `tracking.session.started/stopped`. The device is bound by the first upload (D-057).
+- **Ingestion**: `POST /api/v1/tracking/location` and `/tracking/location/batch` (≤ 500), drivers only. Per-event validation and flags (D-061). Duplicates are classified by one `INSERT … ON CONFLICT DO NOTHING RETURNING event_id` (D-012). The response lists accepted, duplicate and rejected (with reasons) ids plus flags, so the app can clear its queue.
+- **History**: `gps_location_events`, natively partitioned by month on `recorded_at`, with BRIN, GiST and composite indexes, the dedupe key `(tenant_id, device_id, event_id, recorded_at)`, and forced RLS on the parent and every partition. Append-only for the app role.
+- **Latest location**: `vehicle_latest_locations` updated by a conditional upsert (`WHERE current.recorded_at < new.recorded_at`) with only the newest trusted point. Older or untrusted points never overwrite it (hard rule 4).
+- **Freshness** (live/delayed/stale/offline) computed at read time from `recorded_at`, the tenant thresholds and the session state. Every location carries both `recorded_at` and `received_at` (hard rule 3).
+- **Reads**: `GET /vehicles/{id}/location`, `GET /trips/{id}/locations`, `GET /tracking/fleet` (scoped: tenant roles; drivers their own vehicle and trips; customers nothing yet).
+- **Realtime**: newly trusted positions are pushed to the tenant's fleet group after commit.
+- **Partitions & retention** (D-058): daily beat job; archive + verify; drop only with approval.
+- **Live map** (`/ops/map`): MapLibre GL, markers coloured by freshness, popups with recorded/received times and accuracy, a side list, 5 s polling (D-059), a banner when updates stop. Development basemap per D-060.
+
+### Bugs found and fixed while verifying
+- The retention export returned **0 rows**: FORCE RLS also applies to the owner that runs the SECURITY DEFINER function. Archives would have been empty. Fixed with an owner-only read policy (D-058); the archive is verified before any drop.
+- Partition churn: maintenance created a partition 13 months back that retention then expired. Both now use the same 12-month window.
+
+### Definition of Done — status
+| Criterion | Status | Evidence |
+|---|---|---|
+| Single and batch ingestion work | Verified | `test_valid_single_and_batch_ingestion`; live run: batch of 4 accepted |
+| Every GPS validation test passes | Verified | `tests/test_tracking.py`: valid, invalid coordinates, low accuracy, duplicate (+ reused id), old, future (+ clock skew), out-of-order, impossible speed, unauthorized vehicle/driver/device, closed trip (+ late upload within grace, rejection after it), points before trip start, no session, stale location |
+| Partitions and retention job work | Verified | `test_partitions_cover_the_accepted_window`; `test_retention_archives_then_drops_only_with_approval` (archived with pending approval, then dropped only with approval; refuses partitions inside the window); maintenance role cannot read GPS directly |
+| Freshness states display correctly | Verified | threshold boundary tests (8 cases), tenant-configured thresholds, stale never shown as live, offline after the session closes; web unit tests for display ageing; live map page renders the vehicle |
+| Live map updates within the target time | Verified | push to the fleet group 16 ms after commit (test); live stack: WebSocket push received immediately after the upload returned; map feed shows "live" at once, plus at most one 5 s poll, so under 10 s |
+| Older events never overwrite newer ones | Verified | `test_older_event_never_overwrites_newer` (across batches and inside one batch); live run: late older point flagged `out_of_order`, not pushed, latest unchanged |
+
+### Verification (real output, 2026-11-21)
+Backend:
+```
+$ uv run ruff check . / ruff format --check .        -> All checks passed! / 199 files already formatted   [exit 0]
+$ uv run mypy .  /  uv run mypy . --platform linux   -> Success: no issues found in 199 source files       [exit 0]
+$ uv run lint-imports                                -> Contracts: 17 kept, 0 broken.                      [exit 0]
+$ uv run python manage.py makemigrations --check     -> No changes detected                                [exit 0]
+$ REQUIRE_SERVICES=1 uv run pytest -q                -> 218 passed in 29.30s                               [exit 0]
+$ pytest tests/test_tracking.py (x3)                 -> 28 passed, 28 passed, 28 passed                    [stable]
+[latency] ingest -> fleet group message: 16.0 ms
+```
+Web: `npm run lint` [exit 0] · `npm run typecheck` [exit 0] · `npm run test` -> 5 files, 42 tests passed · `npm run build` -> `/ops/map`, `/ops/map/fleet` [exit 0] · `npm audit --audit-level=high` [exit 0; moderate minimatch only, D-038]
+
+Live stack (uvicorn + daphne + Redis + Next standalone; demo company `demo-e2e`):
+```
+PASS  driver starts the trip (tracking session opened)
+PASS  websocket: owner authenticates and subscribes to the fleet
+PASS  driver uploads a batch: all accepted  {'accepted': 4, 'duplicate': 0, 'rejected': 0, 'flagged': 0}
+PASS  websocket push arrives (target <= 10 s after receipt)  0 ms after the upload returned, 2188 ms incl. upload
+PASS  pushed point is the newest one, with recorded and received times
+PASS  API latest location is live immediately  freshness=live age=7s
+PASS  web map feed shows the vehicle as live  2125 ms; worst case adds one 5 s poll -> within 10 s
+PASS  late older point is stored but flagged out_of_order
+PASS  no push for the untrusted point
+PASS  latest location unchanged by the older point
+PASS  live map page renders with the vehicle listed
+PASS  trip track contains all stored points incl. the flagged one
+12/12 live checks passed
+```
+Note: the upload and feed requests took about 2 s each on this memory-constrained Windows workstation (cold processes). The target holds; the Phase 8 load test will measure real latency (300 trucks + 100 office users).
+
+### Not in Phase 4 (by design)
+- Driver app capture and offline queue: Phase 5. Geofences, checkpoints, border-arrival from GPS, route deviation, ETA: Phase 6.
+- Customer tracking views: Phase 6 (customers currently get 404/403 on GPS).
+- S3 archive adapter: Needs credentials (Phase 7). Browser WebSocket ticket: revisit (D-059).
+
+---
+
 ## Open issues
 1. **Docker is not installed** on this workstation. Mitigated by D-032 (portable Postgres/PostGIS/Redis for local tests) and the CI compose job, which is green. Optional: install Docker Desktop with WSL2 to run `docker compose up` locally.
 2. **Terraform is not installed** locally. Not needed until Phase 7.
@@ -317,6 +382,7 @@ docker compose up with the relay role + smoke tests + Trivy on both images).
 5. `.devtools/` (about 1 GB, git-ignored) holds the portable dev tools. Delete it to remove them.
 
 ## Needs approval / human input
+- **D-058** GPS retention drops (`GPS_RETENTION_DROP_ENABLED=true`) delete archived partitions: needs approval before enabling in production.
 - **D-003** AWS region and data residency for Djibouti and Ethiopia (legal confirmation before real data).
 - **D-029** Pilot AWS budget ("under $X/month") is blank. Needed before Phase 7 apply.
 - **D-025** Hardware telematics in/out of pilot (default: out).
@@ -327,6 +393,8 @@ docker compose up with the relay role + smoke tests + Trivy on both images).
 
 ## Needs credentials
 (Interfaces plus test adapters will ship. None of these are live.)
+- S3 bucket for the GPS archive (`GPS_ARCHIVE_BACKEND=s3`), Phase 7
+- Production basemap: self-hosted PMTiles extract (D-028) or a tile provider
 - Amazon Cognito user pools (dev/staging/prod)
 - Email sending (Amazon SES: verified domain, production access)
 - SMS sender for driver OTP to +253/+251 (post-pilot unless approved)
