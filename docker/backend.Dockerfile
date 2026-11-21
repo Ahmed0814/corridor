@@ -23,7 +23,10 @@ FROM python:3.12.16-slim-trixie AS runtime
 # GeoDjango native libraries (GDAL pulls GEOS and PROJ). Debian trixie ships GDAL 3.10:
 # Django's gis.W001 needs >= 3.9 to block file/network access from malicious spatial
 # references (DECISIONS D-041). libcurl for kombu's SQS transport.
+# `apt-get upgrade` applies Debian security fixes newer than the base image (the
+# CI Trivy scan fails on fixable HIGH/CRITICAL CVEs, e.g. zlib CVE-2026-85091).
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends gdal-bin libcurl4t64 \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd --system --gid 10001 app \
