@@ -10,7 +10,8 @@ import structlog
 from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.http import HttpRequest, HttpResponseBase
 
-from corridor.core.request_context import REQUEST_ID_HEADER, accept_or_generate, bind_request_id
+from corridor.core.request_context import REQUEST_ID_HEADER, accept_or_generate, bind_client, bind_request_id
+from corridor.core.tenancy import clear_context
 
 log = structlog.get_logger("corridor.access")
 
@@ -19,9 +20,13 @@ Handler = Callable[[HttpRequest], Any]
 
 def _start(request: HttpRequest) -> str:
     structlog.contextvars.clear_contextvars()
+    clear_context()  # tenant context is established per request by authentication, never inherited
     request_id = accept_or_generate(request.headers.get(REQUEST_ID_HEADER))
     request.request_id = request_id  # type: ignore[attr-defined]
     bind_request_id(request_id)
+    # REMOTE_ADDR is the client address once uvicorn/daphne apply the ALB's X-Forwarded-For
+    # (--proxy-headers); never read X-Forwarded-For here, a client can forge it.
+    bind_client(request.META.get("REMOTE_ADDR"), request.headers.get("User-Agent", ""))
     return request_id
 
 

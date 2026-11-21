@@ -44,7 +44,9 @@ COPY --chown=app:app backend/ /app/
 # Static assets for the internal admin, served by WhiteNoise. Build-time only settings:
 # DJANGO_ENV=development uses the insecure local key, which never reaches runtime.
 RUN DJANGO_ENV=development python manage.py collectstatic --noinput \
- && chown -R app:app /app/staticfiles
+ && chown -R app:app /app/staticfiles \
+ && mkdir -p /devauth && chown app:app /devauth
+# /devauth: signing key of the local development issuer (compose volume; unused in AWS).
 
 ARG RELEASE=dev
 ENV RELEASE=${RELEASE}

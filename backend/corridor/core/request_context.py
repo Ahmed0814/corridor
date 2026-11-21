@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from contextvars import ContextVar
 
 import structlog
 
@@ -35,3 +36,15 @@ def bind_request_id(request_id: str) -> None:
         sentry_sdk.get_isolation_scope().set_tag("request_id", request_id)
     except Exception:  # noqa: S110  # sentry is optional; logging must never break requests
         pass
+
+
+# Client address and user agent for audit rows (not logged: IPs are personal data).
+_client: ContextVar[tuple[str | None, str]] = ContextVar("corridor_client", default=(None, ""))
+
+
+def bind_client(ip: str | None, user_agent: str) -> None:
+    _client.set((ip or None, user_agent[:300]))
+
+
+def current_client() -> tuple[str | None, str]:
+    return _client.get()

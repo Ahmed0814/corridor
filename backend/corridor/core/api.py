@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
+from django.db import connections, transaction
 from django.http import Http404, HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import AuthenticationError, HttpError, ValidationError
@@ -25,9 +26,28 @@ api = NinjaAPI(
 )
 
 
+class ApiError(Exception):
+    """A deliberate API error with a stable machine-readable code."""
+
+    def __init__(self, status: int, code: str, message: str, details: Any = None) -> None:
+        super().__init__(message)
+        self.status = status
+        self.code = code
+        self.message = message
+        self.details = details
+
+
+def _rollback_request_transaction() -> None:
+    # Ninja turns exceptions into responses *inside* the ATOMIC_REQUESTS transaction, which would
+    # otherwise commit partial writes made before the error. Every error response rolls back.
+    if connections["default"].in_atomic_block:
+        transaction.set_rollback(True)
+
+
 def error_response(
     request: HttpRequest, status: int, code: str, message: str, details: Any = None
 ) -> HttpResponse:
+    _rollback_request_transaction()
     return api.create_response(
         request,
         {
@@ -40,6 +60,11 @@ def error_response(
         },
         status=status,
     )
+
+
+@api.exception_handler(ApiError)
+def _api_error(request: HttpRequest, exc: ApiError) -> HttpResponse:
+    return error_response(request, exc.status, exc.code, exc.message, exc.details)
 
 
 @api.exception_handler(ValidationError)

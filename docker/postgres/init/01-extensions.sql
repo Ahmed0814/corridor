@@ -5,5 +5,4 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 \connect corridor
 CREATE EXTENSION IF NOT EXISTS postgis;
--- Phase 2 adds the dedicated roles (corridor_owner / corridor_migrator / corridor_app /
--- corridor_relay / corridor_platform) described in docs/security/security-model.md §4.1.
+-- 02-roles.sh then creates the database roles (docs/security/security-model.md §4.1).

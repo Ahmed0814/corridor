@@ -105,18 +105,33 @@ TEMPLATES = [
 ]
 
 # --------------------------------------------------------------------------- database
-# PostGIS. Every request runs in a transaction (ATOMIC_REQUESTS) so Phase 2 can issue
-# SET LOCAL app.tenant_id at the start of it (MASTER_PROMPT §4.4).
+# PostGIS. Roles (D-007): DATABASE_URL is the runtime role corridor_app (no table ownership, no
+# BYPASSRLS). `manage.py migrate` runs with DATABASE_URL pointing at corridor_migrator instead.
+# PLATFORM_DATABASE_URL is the audited Super Admin path (corridor.core.platform). Every request
+# runs in a transaction (ATOMIC_REQUESTS) so authentication can SET LOCAL the tenant context.
+_LOCAL_DB = "postgis://{role}:{role}_local@localhost:5432/corridor"  # local-only placeholders
 if IS_LOCAL:
     DATABASES = {
-        "default": env.db_url("DATABASE_URL", default="postgis://corridor:corridor@localhost:5432/corridor")
+        "default": env.db_url("DATABASE_URL", default=_LOCAL_DB.format(role="corridor_app")),
+        "platform": env.db_url("PLATFORM_DATABASE_URL", default=_LOCAL_DB.format(role="corridor_platform")),
     }
+    # Used only by the test runner to create the test database and run migrations.
+    MIGRATOR_DATABASE_URL: str = env.str(
+        "MIGRATOR_DATABASE_URL", default=_LOCAL_DB.format(role="corridor_migrator")
+    )
 else:
-    DATABASES = {"default": env.db_url("DATABASE_URL")}
-DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+    DATABASES = {
+        "default": env.db_url("DATABASE_URL"),
+        "platform": env.db_url("PLATFORM_DATABASE_URL"),
+    }
+for _alias, _cfg in DATABASES.items():
+    _cfg["ENGINE"] = "django.contrib.gis.db.backends.postgis"
+    _cfg["ATOMIC_REQUESTS"] = _alias == "default"
+    # Tests: close connections after use, so worker threads (Channels) never hold the test
+    # database open at teardown.
+    _cfg["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=0 if DJANGO_ENV == "test" else 60)
+    _cfg["CONN_HEALTH_CHECKS"] = True
+DATABASE_ROUTERS = ["corridor.core.platform.DefaultOnlyRouter"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # GeoDjango native libraries (only needed when not on the system path, e.g. Windows dev).
@@ -152,6 +167,48 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 }
 CELERY_TASK_ALWAYS_EAGER = DJANGO_ENV == "test"
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# --------------------------------------------------------------------------- identity (D-006)
+# Amazon Cognito validates who the user is; tenant_memberships decides what they may do.
+# COGNITO_ISSUER: https://cognito-idp.<region>.amazonaws.com/<user pool id>
+# COGNITO_CLIENT_IDS: "web-office=<id>,web-portal=<id>,driver-mobile=<id>"
+# Locally (development/test only) a built-in issuer signs Cognito-shaped tokens (D-006); a
+# system check refuses it anywhere else.
+AUTH_ISSUER_MODE: str = env.str("AUTH_ISSUER_MODE", default="local" if IS_LOCAL else "cognito")
+if AUTH_ISSUER_MODE not in {"local", "cognito"}:
+    raise RuntimeError(f"Invalid AUTH_ISSUER_MODE={AUTH_ISSUER_MODE!r}")
+if AUTH_ISSUER_MODE == "local" and not IS_LOCAL:
+    raise RuntimeError("AUTH_ISSUER_MODE=local is only allowed in development/test")
+LOCAL_ISSUER = "http://localhost:8000/dev-auth"
+COGNITO_ISSUER: str = env.str("COGNITO_ISSUER", default=LOCAL_ISSUER if AUTH_ISSUER_MODE == "local" else "")
+COGNITO_CLIENT_IDS: dict[str, str] = {
+    kind: client_id
+    for kind, client_id in (
+        item.split("=", 1)
+        for item in env.list(
+            "COGNITO_CLIENT_IDS",
+            default=(
+                [
+                    "web-office=local-web-office",
+                    "web-portal=local-web-portal",
+                    "driver-mobile=local-driver-mobile",
+                ]
+                if AUTH_ISSUER_MODE == "local"
+                else []
+            ),
+        )
+    )
+}
+COGNITO_USER_POOL_ID: str = env.str("COGNITO_USER_POOL_ID", default="")
+COGNITO_REGION: str = env.str("COGNITO_REGION", default=env.str("AWS_REGION", default="me-central-1"))
+AUTH_JWKS_CACHE_SECONDS: int = env.int("AUTH_JWKS_CACHE_SECONDS", default=3600)
+AUTH_LEEWAY_SECONDS = 60
+# Private key of the local issuer (generated on first use, git-ignored).
+LOCAL_ISSUER_KEY_FILE: str = env.str(
+    "LOCAL_ISSUER_KEY_FILE", default=str(BASE_DIR / ".devauth" / "issuer_key.pem")
+)
+# Browser origins allowed to open WebSockets (non-browser clients send no Origin).
+WEB_ALLOWED_ORIGINS: list[str] = env.list("WEB_ALLOWED_ORIGINS", default=["http://localhost:3000"])
 
 # --------------------------------------------------------------------------- i18n / time
 LANGUAGE_CODE = "en"

@@ -16,7 +16,14 @@ x-backend: &backend
     DJANGO_ENV: development
     DJANGO_DEBUG: "false"
     LOG_FORMAT: json
-    DATABASE_URL: postgis://corridor:corridor@db:5432/corridor
+    # Runtime roles (D-007): corridor_app for requests and tasks, corridor_platform for the
+    # audited Super Admin path. Neither owns tables nor bypasses RLS.
+    DATABASE_URL: postgis://corridor_app:corridor_app_local@db:5432/corridor
+    PLATFORM_DATABASE_URL: postgis://corridor_platform:corridor_platform_local@db:5432/corridor
+    # Local stand-in for Cognito (D-006); refused by settings outside development/test.
+    AUTH_ISSUER_MODE: local
+    LOCAL_ISSUER_KEY_FILE: /devauth/issuer_key.pem
+    WEB_ALLOWED_ORIGINS: http://localhost:3000
     REDIS_URL: redis://redis:6379/0
     CELERY_BROKER_URL: sqs://local:local@elasticmq:9324
     SQS_IS_SECURE: "false"
@@ -25,6 +32,9 @@ x-backend: &backend
     AWS_SECRET_ACCESS_KEY: local
     SQS_QUEUE_PREFIX: corridor-development-
     SENTRY_DSN: ${SENTRY_DSN:-}
+  volumes:
+    # Shared signing key of the local issuer, so api and realtime accept the same tokens.
+    - devauth:/devauth
   depends_on: &backend-deps
     db:
       condition: service_healthy
@@ -47,6 +57,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./backend/db:/corridor-db:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U corridor -d corridor"]
       interval: 5s
@@ -76,6 +87,10 @@ services:
 
   migrate:
     <<: *backend
+    # Migrations run as corridor_migrator, which acts as corridor_owner (owns every object).
+    environment:
+      <<: *backend-env
+      DATABASE_URL: postgis://corridor_migrator:corridor_migrator_local@db:5432/corridor
     command: ["python", "manage.py", "migrate", "--noinput"]
     restart: "no"
     depends_on:
@@ -121,6 +136,13 @@ services:
     image: corridor-web:dev
     environment:
       API_INTERNAL_URL: http://api:8000
+      # OAuth 2.0 code + PKCE against the local issuer (Cognito hosted UI in AWS).
+      AUTH_AUTHORIZE_URL: http://localhost:8000/dev-auth/authorize
+      AUTH_TOKEN_URL: http://api:8000/dev-auth/token
+      AUTH_LOGOUT_URL: http://localhost:8000/dev-auth/logout
+      AUTH_CLIENT_ID_OFFICE: local-web-office
+      AUTH_CLIENT_ID_PORTAL: local-web-portal
+      APP_BASE_URL: http://localhost:3000
     ports: ["127.0.0.1:3000:3000"]
     depends_on:
       api:
@@ -129,3 +151,4 @@ services:
 
 volumes:
   pgdata:
+  devauth:

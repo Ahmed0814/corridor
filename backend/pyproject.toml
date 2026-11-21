@@ -18,6 +18,8 @@ dependencies = [
     "sentry-sdk[django,celery]>=2.20",
     "django-stubs-ext>=5.1",
     "whitenoise>=6.8",
+    "pyjwt[crypto]>=2.10",
+    "boto3>=1.35",
 ]
 
 [dependency-groups]
@@ -60,7 +62,7 @@ warn_unused_ignores = true
 exclude = ["/migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["environ.*", "channels.*", "channels_redis.*", "daphne.*", "kombu.*"]
+module = ["environ.*", "channels.*", "channels_redis.*", "daphne.*", "kombu.*", "boto3.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -75,7 +77,15 @@ django_settings_module = "config.settings"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 addopts = "-ra --strict-markers"
-env = ["DJANGO_ENV=test", "LOG_FORMAT=json"]
+# "D:" = default only: CI's environment variables win. These keep a stale local backend/.env from
+# pointing tests at the wrong database role (tests must run as corridor_app).
+env = [
+    "DJANGO_ENV=test",
+    "LOG_FORMAT=json",
+    "D:DATABASE_URL=postgis://corridor_app:corridor_app_local@localhost:5432/corridor",
+    "D:PLATFORM_DATABASE_URL=postgis://corridor_platform:corridor_platform_local@localhost:5432/corridor",
+    "D:MIGRATOR_DATABASE_URL=postgis://corridor_migrator:corridor_migrator_local@localhost:5432/corridor",
+]
 testpaths = ["tests", "corridor"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

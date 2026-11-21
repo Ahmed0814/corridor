@@ -13,7 +13,8 @@ BACKEND = Path(__file__).resolve().parent.parent
 
 
 def _import_settings(extra_env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    env = {k: v for k, v in os.environ.items() if not k.startswith(("DJANGO_", "DATABASE_URL"))}
+    stripped = ("DJANGO_", "DATABASE_URL", "PLATFORM_", "AUTH_")
+    env = {k: v for k, v in os.environ.items() if not k.startswith(stripped)}
     env.update(extra_env)
     return subprocess.run(
         [sys.executable, "-c", "import config.settings"],
@@ -45,6 +46,7 @@ def test_debug_is_refused_in_production() -> None:
             "DJANGO_ENV": "production",
             "DJANGO_SECRET_KEY": "x" * 50,
             "DATABASE_URL": "postgis://u:p@db/x",
+            "PLATFORM_DATABASE_URL": "postgis://u:p@db/x",
             "DJANGO_DEBUG": "true",
         }
     )

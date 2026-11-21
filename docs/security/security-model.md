@@ -27,27 +27,63 @@ Middleware resolves `RequestContext(user, tenant, membership, role, permissions,
 
 ### 3.2 Role → permission matrix (pilot defaults)
 
-| Permission group | Owner | Admin | Ops Mgr | Dispatcher | Fleet Mgr | Finance | Driver | Customer |
-|---|---|---|---|---|---|---|---|---|
-| tenant.settings, users.manage, roles.assign | ✓ | ✓ (cannot assign Owner) | – | – | – | – | – | – |
-| customers.read / write | ✓/✓ | ✓/✓ | ✓/✓ | ✓/– | – | ✓/– | – | own profile |
-| containers.read / write | ✓/✓ | ✓/✓ | ✓/✓ | ✓/✓ | ✓/– | – | – | on own shipments |
-| shipments.read / write | ✓/✓ | ✓/✓ | ✓/✓ | ✓/✓ | ✓/– | ✓/– | assigned only | own only |
-| shipments.dispatch, trips.assign | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
-| shipments.confirm_clearance | ✓ | ✓ | ✓ | – | – | – | – | – |
-| shipments.correct, trips.correct | ✓ | ✓ | – | – | – | – | – | – |
-| fleet.read / write | ✓/✓ | ✓/✓ | ✓/– | ✓/– | ✓/✓ | – | own vehicle (read) | – |
-| drivers.read / write / pii | ✓/✓/✓ | ✓/✓/✓ | ✓/–/– | ✓/–/– | ✓/✓/✓ | – | self | – |
-| trips.start / pause / complete | on behalf (reason) | on behalf (reason) | on behalf (reason) | on behalf (reason) | – | – | own assignment | – |
-| tracking.ingest | – | – | – | – | – | – | own session | – |
-| tracking.read (live map) | ✓ | ✓ | ✓ | ✓ | ✓ | – | own | own shipments, in transit only |
-| tracking_links.create / revoke | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
-| delivery.confirm | ✓ | ✓ | ✓ | – | – | – | own trip | – |
-| documents.read / upload | ✓/✓ | ✓/✓ | ✓/✓ | ✓/✓ | ✓/– | ✓/– | own trip | customer-visible only |
-| audit.read | ✓ | ✓ | – | – | – | – | – | – |
-| billing.* (post-pilot) | ✓ | ✓ | – | – | – | ✓ | – | – |
+Generated from `backend/corridor/identity/permissions.py`, the single source of truth (D-008). The
+database tables `roles`, `permissions` and `role_permissions` mirror it after every `migrate`, and a
+test fails if this table, the database or the code disagree. A permission held by a Driver or a
+Customer is further narrowed by their scope (§3.3): for example `shipments.read` means "assigned
+shipments only" for a driver and "own shipments only" for a customer. Owner, Admin and Finance hold
+**no** permissions until MFA is verified (§2).
 
-The matrix will be seeded from code (`identity/permissions.py`), which becomes the single source of truth. This table will be regenerated from that file in Phase 2.
+<!-- BEGIN GENERATED PERMISSION MATRIX (backend/scripts/gen_permission_matrix.py) -->
+| Permission | Company Owner | Company Admin | Operations Manager | Dispatcher | Fleet Manager | Finance Officer | Driver | Customer |
+|---|---|---|---|---|---|---|---|---|
+| `tenant.read` Read the company profile | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `tenant.settings` Change company profile and settings | ✓ | ✓ | – | – | – | – | – | – |
+| `users.manage` Invite, suspend and reactivate members | ✓ | ✓ | – | – | – | – | – | – |
+| `roles.assign` Change a member's role | ✓ | ✓ | – | – | – | – | – | – |
+| `audit.read` Read the company audit log | ✓ | ✓ | – | – | – | – | – | – |
+| `customers.read` Read customers | ✓ | ✓ | ✓ | ✓ | – | ✓ | – | ✓ |
+| `customers.write` Create and edit customers | ✓ | ✓ | ✓ | – | – | – | – | – |
+| `containers.read` Read containers | ✓ | ✓ | ✓ | ✓ | ✓ | – | – | ✓ |
+| `containers.write` Create and edit containers | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `shipments.read` Read shipments | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `shipments.write` Create and edit shipments | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `shipments.dispatch` Dispatch shipments | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `shipments.confirm_clearance` Confirm border/customs clearance | ✓ | ✓ | ✓ | – | – | – | – | – |
+| `shipments.correct` Record corrections on shipments | ✓ | ✓ | – | – | – | – | – | – |
+| `trips.assign` Assign vehicles and drivers to trips | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `trips.start` Start trips | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | – |
+| `trips.pause` Pause and resume trips | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | – |
+| `trips.complete` Complete trips | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | – |
+| `trips.act_on_behalf` Start/pause/complete a trip on behalf of its driver (reason required) | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `trips.correct` Record corrections on trips | ✓ | ✓ | – | – | – | – | – | – |
+| `fleet.read` Read vehicles, trailers and GPS devices | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | – |
+| `fleet.write` Manage vehicles, trailers and GPS devices | ✓ | ✓ | – | – | ✓ | – | – | – |
+| `drivers.read` Read driver profiles | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | – |
+| `drivers.write` Manage driver profiles | ✓ | ✓ | – | – | ✓ | – | – | – |
+| `drivers.pii` See driver personal data (license number, phone) | ✓ | ✓ | – | – | ✓ | – | – | – |
+| `tracking.ingest` Send GPS locations for an own tracking session | – | – | – | – | – | – | ✓ | – |
+| `tracking.read` See live and historical locations | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ |
+| `tracking_links.create` Create public tracking links | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `tracking_links.revoke` Revoke public tracking links | ✓ | ✓ | ✓ | ✓ | – | – | – | – |
+| `delivery.confirm` Confirm or fail a delivery | ✓ | ✓ | ✓ | – | – | – | ✓ | – |
+| `documents.read` Read documents | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `documents.upload` Upload documents | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | – |
+
+| Role | MFA required | Scope | App clients |
+|---|---|---|---|
+| Company Owner (`owner`) | yes | tenant | web-office |
+| Company Admin (`admin`) | yes | tenant | web-office |
+| Operations Manager (`ops_manager`) | no | tenant | web-office |
+| Dispatcher (`dispatcher`) | no | tenant | web-office |
+| Fleet Manager (`fleet_manager`) | no | tenant | web-office |
+| Finance Officer (`finance`) | yes | tenant | web-office |
+| Driver (`driver`) | no | driver | driver-mobile |
+| Customer (`customer`) | no | customer | web-portal |
+<!-- END GENERATED PERMISSION MATRIX -->
+
+Rules enforced in code beyond the matrix: only an Owner can grant, change or suspend an Owner; nobody
+changes their own membership; a company always keeps at least one active Owner.
 
 ### 3.3 Scope rules beyond the tenant
 - **Customer**: every query goes through `shipments.services.visible_shipments(ctx)`, which adds `customer_id = ctx.customer_id`. Other customers' shipments in the same tenant return 404.

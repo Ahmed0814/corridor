@@ -14,7 +14,7 @@
     "status": "System status"
   },
   "Area": {
-    "notBuilt": "This area is not built yet. Sign-in arrives in Phase 2; screens arrive in Phases 3–6.",
+    "notBuilt": "This area is not built yet. Screens arrive in Phases 3–6.",
     "noData": "No data. Nothing on this page comes from a real tenant."
   },
   "Status": {
@@ -26,5 +26,36 @@
     "down": "Unavailable",
     "unreachable": "API unreachable",
     "checkedAt": "Checked at {time}"
+  },
+  "Session": {
+    "signOut": "Sign out",
+    "company": "Company",
+    "switch": "Switch",
+    "signInAgain": "Sign in again",
+    "reference": "Reference: {id}",
+    "mfaRequired": "Your role requires multi-factor authentication. Set up an authenticator app for your account, then sign in again. Until then this role has no permissions.",
+    "noAccess": "This account has no access to Corridor.",
+    "noMembership": "You are not a member of any company yet. Ask your company administrator for an invitation.",
+    "membershipSuspended": "Your access to this company is suspended.",
+    "tenantSuspended": "This company account is suspended. Contact Corridor support.",
+    "wrongClient": "Your role cannot use this area. Customers use the customer portal; drivers use the driver app.",
+    "tenantNotFound": "The selected company is not available to you.",
+    "unreachable": "The API cannot be reached. Try again in a moment.",
+    "sessionRejected": "Your session is no longer valid.",
+    "notPlatformAdmin": "This area is for platform administrators only.",
+    "generic": "Something went wrong.",
+    "signInFailed": "Sign-in failed",
+    "signInFailedHelp": "The sign-in could not be completed. Start again from the home page.",
+    "backHome": "Back to the home page",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "ops_manager": "Operations manager",
+      "dispatcher": "Dispatcher",
+      "fleet_manager": "Fleet manager",
+      "finance": "Finance",
+      "driver": "Driver",
+      "customer": "Customer"
+    }
   }
 }

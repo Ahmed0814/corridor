@@ -18,7 +18,7 @@ from corridor.realtime.routing import websocket_urlpatterns  # noqa: E402
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        # Origin and auth checks for real topics are added in Phase 2 (security-model.md §5).
+        # Origin allowlist and token auth are enforced per consumer (realtime/consumers.py).
         "websocket": URLRouter(websocket_urlpatterns),
     }
 )

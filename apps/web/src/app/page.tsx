@@ -20,7 +20,7 @@ export default async function HomePage() {
       </h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {AREAS.map(({ href, key }) => (
-          <Link key={href} href={href} className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
+          <Link key={href} href={href} prefetch={false} className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
             <Card className="h-full transition-colors hover:bg-muted">
               <CardHeader>
                 <CardTitle>{t(`Home.${key}`)}</CardTitle>

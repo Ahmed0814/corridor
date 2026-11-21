@@ -4,7 +4,7 @@
 |---|---|---|
 | 0 Discovery & architecture | **Done** (DoD evidence below) | 2026-11-20 |
 | 1 Foundation | **Implemented. DoD partially verified**: compose + CI items await a first CI run or Docker (see Phase 1) | 2026-11-21 |
-| 2 Security & tenancy | Not started | — |
+| 2 Security & tenancy | **Implemented. DoD met except real Cognito login** (needs credentials) and its first CI run | 2026-11-21 |
 | 3 Core logistics | Not started | — |
 | 4 GPS tracking | Not started | — |
 | 5 Driver app & offline | Not started | — |
@@ -144,6 +144,82 @@ Not run locally: smoke check 8 (beat -> SQS -> worker heartbeat), which needs El
 ### Phase 1 open items
 - Push to GitHub and get the first green CI run. This closes the two unverified DoD rows. The compose job's Trivy scan may flag base-image CVEs on first run.
 - Mobile lint (`expo lint`) is not configured yet (its first run is interactive). To be added in Phase 5 along with mobile tests and Sentry for React Native.
+
+---
+
+## Phase 2 — Security and tenancy
+
+Started in a separate session, which was stopped before it recorded anything. Taken over and finished in the main session: its uncommitted work was reviewed and verified, and the driver sign-in was completed.
+
+### What was built
+- **Database roles** (D-007, D-044): `corridor_owner` (NOLOGIN, owns everything), `corridor_migrator`, `corridor_app`, `corridor_relay`, `corridor_platform`, created by `backend/db/bootstrap_roles.sql`. Runtime roles own nothing and cannot bypass RLS.
+- **Tenancy**: `TenantOwnedModel` with a scoped manager that refuses to run without a tenant, forced RLS on every tenant table (`SET LOCAL app.tenant_id` inside the request transaction only), `tenant_context()` for Celery tasks (`@tenant_task`) and Channels consumers, and a platform-admin path on its own role with every action audited.
+- **Identity**: tenants, users, memberships, platform-defined roles and the permission matrix in code (`identity/permissions.py`; the docs table is generated and checked in CI), invitations, suspension and reactivation, company switching, and an MFA gate for privileged roles (no permissions until MFA is verified).
+- **Auth**: verification of Cognito-shaped RS256 access tokens (JWKS, issuer, client id, token use), client-kind enforcement (office / portal / driver), and a local OAuth issuer for dev/test (D-042).
+- **Audit**: append-only `audit_logs` (the app role cannot update or delete) with rows for login (once per Cognito session), role change, company switch, invitation, suspension and platform actions.
+- **Realtime**: `/ws/v1/tracking/` with first-message auth, origin allowlist, server-built group names and periodic membership re-checks (D-046).
+- **Web**: OAuth code + PKCE sign-in, HttpOnly session cookies, a refresh route, company switching, a `proxy.ts` gate per area, and en/fr session messages.
+- **Driver app** (finished in this session): sign-in via the system browser (expo-auth-session, PKCE), tokens in expo-secure-store, refresh before expiry and on 401, a profile screen, and driver-facing error messages. It still states that no tracking runs.
+
+### Bugs found and fixed while verifying
+- **Driver sign-in could never complete**: Django refused to redirect to `corridor-driver://`. Found by the end-to-end check, fixed in the local issuer (D-048), regression test added.
+- The local `backend/.env` still pointed `DATABASE_URL` at the old Phase 1 superuser-like role, which would have run local tests as the wrong role. The line was removed, so settings default to `corridor_app`.
+- One lint error (line length) in `tests/test_settings_safety.py`.
+
+### Definition of Done — status
+| Criterion | Status | Evidence |
+|---|---|---|
+| Cognito login works for web and driver flows | **Partly**: flows verified against the local issuer (same protocol and token checks), **not against real Cognito** | E2E run below (web office + driver-mobile clients). Real Cognito needs a user pool (Needs credentials). |
+| RLS on every tenant table | Verified | `test_every_tenant_table_has_forced_rls_and_a_tenant_policy`, `test_global_tables_with_tenant_data_have_forced_rls` |
+| Security test suite passes as the app role | Verified | 163 passed; `test_tests_run_as_the_application_role` asserts `current_user = corridor_app` |
+| App role has no BYPASSRLS and owns no tables | Verified | `test_app_role_has_no_bypassrls_superuser_or_createrole`, `test_app_role_owns_no_tables_sequences_views_or_functions`, plus a direct check of the local cluster (below) |
+| Changing tenant_id in a request has no effect | Verified | API tests + E2E: body `tenant_id` -> 422 (unknown fields forbidden); raw SQL cannot insert, update or move rows into another tenant; forged session variable rejected |
+| Celery tasks and WebSocket consumers respect tenant context | Verified | `test_tenant_task_sees_only_its_tenant`, `test_fleet_subscription_is_limited_to_own_tenant`, `test_cannot_authenticate_into_another_tenant`, and 8 more WebSocket tests |
+| Audit rows for login, role change, tenant switch | Verified | `test_login_is_audited_once_per_cognito_session`, `test_role_change_is_audited_and_visible_to_auditors`, `test_tenant_switch_is_audited_in_the_destination_tenant`; E2E produced `auth.login` x5, `membership.invited` x2, `membership.activated` x3, `tenant.created` x1 |
+
+### Verification (real output, 2026-11-21, local Postgres 16.16 + PostGIS 3.7, Redis)
+
+Backend (`cd backend`):
+```
+$ uv run ruff check .                                      -> All checks passed!                              [exit 0]
+$ uv run ruff format --check .                             -> 191 files already formatted                     [exit 0]
+$ uv run mypy .                                            -> Success: no issues found in 191 source files    [exit 0]
+$ uv run mypy . --platform linux                           -> Success: no issues found in 191 source files    [exit 0]
+$ uv run lint-imports                                      -> Contracts: 17 kept, 0 broken.                   [exit 0]
+$ uv run python manage.py check --fail-level WARNING       -> System check identified no issues (0 silenced). [exit 0]
+$ uv run python manage.py makemigrations --check --dry-run -> No changes detected                             [exit 0]
+$ REQUIRE_SERVICES=1 uv run pytest -q                      -> 163 passed in 23.50s                            [exit 0]
+$ uv run pip-audit --strict --skip-editable                -> No known vulnerabilities found                  [exit 0]
+```
+
+Local cluster roles (`select rolname, rolcanlogin, rolbypassrls, rolsuper from pg_roles where rolname like 'corridor%'`):
+```
+corridor|t|f|f   corridor_app|t|f|f   corridor_migrator|t|f|f   corridor_owner|f|f|f   corridor_platform|t|f|f   corridor_relay|t|f|f
+```
+Dev database: owned by `corridor_owner`, 16 application tables owned by `corridor_owner` (plus PostGIS's `spatial_ref_sys`).
+
+Web (`cd apps/web`): `npm run lint` [exit 0] · `npm run typecheck` [exit 0] · `npm run test` -> 30 passed [exit 0] · `npm run build` -> 12 routes incl. `/auth/*` and the Proxy (Middleware) [exit 0]
+
+Driver app (`cd apps/driver-mobile`): `npm run typecheck` [exit 0] · `npm test` -> 11 passed, 0 failed [exit 0] · `npx expo-doctor@1.21.8` -> 20/20 checks passed [exit 0]
+
+End-to-end over HTTP against the running API (the same requests the web app and driver app make: authorization code + PKCE at the local issuer, then API calls). Demo company `demo-e2e` created with `manage.py create_tenant --demo`:
+```
+PASS  web: owner signs in, /me shows company + owner role  status=200 tenant=demo-e2e
+PASS  web: owner without MFA is refused privileged actions  status=403 code=mfa_required
+PASS  driver: uninvited phone has no company access  status=403 active_tenant=None code=no_access
+PASS  web: owner invites a driver by phone  status=201
+PASS  api: tenant_id in a request body is rejected (schema forbids unknown fields)  status=422 code=validation_error
+PASS  driver app: invited driver signs in, /me shows company + driver role  status=200 role=driver client=driver-mobile
+PASS  driver signing in through the office web client is refused  status=403 code=wrong_client
+PASS  driver cannot list the company's members  status=403 code=forbidden
+8/8 end-to-end checks passed
+```
+(The first E2E run failed at the driver step with `DisallowedRedirect: Unsafe redirect to URL with protocol 'corridor-driver'`. That is the bug fixed above.)
+
+### Not verified / open
+- **Real Cognito**: hosted UI, TOTP enrollment, phone verification and Cognito's token claims. Needs a user pool per environment (Needs credentials).
+- **Driver app on a device or emulator**: the sign-in was verified at the HTTP level only. The browser hand-off and secure storage need an Expo development build (Phase 5 device plan).
+- **First CI run of Phase 2**: not pushed yet.
 
 ---
 

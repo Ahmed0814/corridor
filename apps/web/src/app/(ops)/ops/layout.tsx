@@ -1,12 +1,15 @@
 import { getTranslations } from "next-intl/server";
 
-import { AreaShell } from "@/components/area-shell";
+import { AreaLayout } from "@/components/area-layout";
+
+// Per-user content: never statically rendered or cached.
+export const dynamic = "force-dynamic";
 
 export default async function Layout({ children }: LayoutProps<"/ops">) {
   const t = await getTranslations("Home");
   return (
-    <AreaShell title={t("ops")} scope="ops">
+    <AreaLayout area="ops" title={t("ops")}>
       {children}
-    </AreaShell>
+    </AreaLayout>
   );
 }

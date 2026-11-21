@@ -46,6 +46,14 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-039 | URL prefixes per web area | Decided |
 | D-040 | Health endpoints outside request transactions | Decided |
 | D-041 | GDAL >= 3.9 everywhere (Debian trixie base) | Decided |
+| D-042 | Local OAuth issuer standing in for Cognito (dev/test only) | Decided |
+| D-043 | Django admin in development only | Decided |
+| D-044 | Database roles created by a bootstrap script before migrations | Decided |
+| D-045 | Every API error response rolls back the request transaction | Decided |
+| D-046 | WebSocket auth in the first message, with an origin allowlist | Decided |
+| D-047 | Client IP and user agent only in audit rows, never in logs | Decided |
+| D-048 | Driver app redirect via its custom URL scheme | Decided |
+| D-049 | Driver app unit tests with `node --test` | Decided |
 
 ---
 
@@ -177,3 +185,27 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-041 GDAL >= 3.9 everywhere (Debian trixie base)
 **Context:** The first CI run failed `manage.py check --fail-level WARNING` with Django's `gis.W001`: GDAL older than 3.9 cannot block file and network access triggered by malicious spatial references. Ubuntu 24.04 (CI) ships GDAL 3.8.4 and Debian bookworm (the image) ships 3.6.2. Locally it passed only because the PostGIS bundle carries GDAL 3.13. **Choice:** the backend image uses `python:3.12.16-slim-trixie` (GDAL 3.10.3), and the CI backend job runs inside that same image, so CI tests the production GDAL. The warning stays an error, and is not silenced. **Trade-off:** trixie is newer than bookworm, so some package names differ (`libcurl4t64`).
+
+## D-042 Local OAuth issuer standing in for Cognito (dev/test only)
+**Context:** No Cognito user pool exists yet (Needs credentials), but Phase 2 needs real login flows to test against. **Choice:** `corridor.identity.local_issuer` implements the same OAuth 2.0 authorization code + PKCE (S256) flow and refresh grant as Cognito, issuing RS256 access tokens with a published JWKS. Django verifies them through the same code path as Cognito tokens. Its sign-in page has **no password check** and says so. Settings refuse `AUTH_ISSUER_MODE=local` outside development/test (tested). Redirect URIs are an exact-match allowlist per client. **Trade-off:** real Cognito behaviour (MFA enrollment, phone verification, hosted UI) is untested until a pool exists.
+
+## D-043 Django admin in development only
+**Choice:** `/platform-admin/` (Django admin) is mounted only when `DJANGO_ENV=development`. Tenant data sits behind RLS, so the admin could not browse it anyway. Platform administration in deployed environments uses the audited `/api/v1/platform` API on the `corridor_platform` role (D-007). **Trade-off:** no admin UI in staging/production until a platform-admin screen is built.
+
+## D-044 Database roles created by a bootstrap script before migrations
+**Context:** Creating roles needs superuser rights, which migrations must not have. **Choice:** `backend/db/bootstrap_roles.sql` runs once per cluster as a superuser (the RDS master user in AWS), with passwords passed as psql variables, never in the file. It is idempotent, and never grants BYPASSRLS, SUPERUSER or ownership to a login role. `corridor_migrator` logs in and immediately acts as `corridor_owner`, so every object is owned by the NOLOGIN owner role. Compose runs it from `docker/postgres/init/02-roles.sh`, and CI runs it before migrating. **Trade-off:** one manual (or Terraform-run) step per new database.
+
+## D-045 Every API error response rolls back the request transaction
+**Context:** Ninja turns exceptions into responses *inside* the `ATOMIC_REQUESTS` transaction, so writes made before an error would otherwise commit. **Choice:** `error_response()` marks the transaction for rollback, so no error response leaves a partial write (e.g. no half-recorded login audit row; tested). **Trade-off:** none.
+
+## D-046 WebSocket auth in the first message, with an origin allowlist
+**Choice:** `/ws/v1/tracking/` accepts the connection, then requires `{"action":"auth","token":...}` within 10 s, resolved exactly like an HTTP request. A token in the URL is ignored, because URLs end up in logs. Browser origins must be in `WEB_ALLOWED_ORIGINS`. Groups are named server-side only. Membership is re-checked every 15 minutes. **Trade-off:** a socket is briefly open before authentication (closed on timeout; tested).
+
+## D-047 Client IP and user agent only in audit rows, never in logs
+**Choice:** the request middleware binds `REMOTE_ADDR` (after uvicorn/daphne apply the ALB's forwarded headers; `X-Forwarded-For` is never read directly) and the user agent for audit rows only. IP addresses are personal data and are not written to application logs. **Trade-off:** IP-based debugging needs the audit table or ALB logs.
+
+## D-048 Driver app redirect via its custom URL scheme
+**Context:** The driver app signs in through the system browser (auth code + PKCE) and must receive the code back. Django's redirect response only allows http/https/ftp, so the `corridor-driver://auth/callback` redirect was blocked. Driver sign-in never completed, and the end-to-end check caught it. **Choice:** the local issuer allows exactly the `corridor-driver` scheme, and only for targets already matching the redirect allowlist (regression test added). With Cognito, the same URI must be registered as the driver-mobile app client's callback URL. **Trade-off:** custom schemes can in principle be claimed by another app on the device. PKCE prevents a stolen code from being exchanged. Android App Links (verified https) can replace the scheme before release.
+
+## D-049 Driver app unit tests with `node --test`
+**Choice:** pure logic (session expiry, refresh, error mapping) lives in React Native-free modules and is tested with Node 24's built-in runner, which runs TypeScript natively. Node types are referenced only from test files (TypeScript 6 no longer loads `@types/*` by default), so app code cannot use Node APIs that do not exist on phones. Component and device tests (Jest/Detox) arrive in Phase 5. **Trade-off:** no UI tests for the sign-in screen yet.

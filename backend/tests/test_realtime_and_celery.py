@@ -9,6 +9,7 @@ from config.celery import _propagate_request_id
 from corridor.events.tasks import heartbeat
 
 
+@pytest.mark.django_db  # Channels checks DB connections around each consumer event
 async def test_websocket_ping_pong() -> None:
     communicator = WebsocketCommunicator(application, "/ws/v1/ping/")
     connected, _ = await communicator.connect()
@@ -21,7 +22,7 @@ async def test_websocket_ping_pong() -> None:
 
 
 async def test_unknown_websocket_path_is_rejected() -> None:
-    communicator = WebsocketCommunicator(application, "/ws/v1/tracking/")
+    communicator = WebsocketCommunicator(application, "/ws/v1/nope/")
     with pytest.raises(ValueError, match="No route found"):
         await communicator.connect()
 

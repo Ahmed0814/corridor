@@ -25,9 +25,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.audit.models
     corridor.audit.api
+    corridor.audit.apps
+    corridor.audit.migrations
+    corridor.audit.models
     corridor.audit.tasks
+    corridor.audit.tests
 allow_indirect_imports = True
 
 [importlinter:contract:containers-private]
@@ -52,9 +55,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.containers.models
     corridor.containers.api
+    corridor.containers.apps
+    corridor.containers.migrations
+    corridor.containers.models
     corridor.containers.tasks
+    corridor.containers.tests
 allow_indirect_imports = True
 
 [importlinter:contract:customers-private]
@@ -79,9 +85,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.customers.models
     corridor.customers.api
+    corridor.customers.apps
+    corridor.customers.migrations
+    corridor.customers.models
     corridor.customers.tasks
+    corridor.customers.tests
 allow_indirect_imports = True
 
 [importlinter:contract:delivery-private]
@@ -106,9 +115,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.delivery.models
     corridor.delivery.api
+    corridor.delivery.apps
+    corridor.delivery.migrations
+    corridor.delivery.models
     corridor.delivery.tasks
+    corridor.delivery.tests
 allow_indirect_imports = True
 
 [importlinter:contract:dispatch-private]
@@ -133,9 +145,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.dispatch.models
     corridor.dispatch.api
+    corridor.dispatch.apps
+    corridor.dispatch.migrations
+    corridor.dispatch.models
     corridor.dispatch.tasks
+    corridor.dispatch.tests
 allow_indirect_imports = True
 
 [importlinter:contract:documents-private]
@@ -160,9 +175,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.documents.models
     corridor.documents.api
+    corridor.documents.apps
+    corridor.documents.migrations
+    corridor.documents.models
     corridor.documents.tasks
+    corridor.documents.tests
 allow_indirect_imports = True
 
 [importlinter:contract:drivers-private]
@@ -187,9 +205,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.drivers.models
     corridor.drivers.api
+    corridor.drivers.apps
+    corridor.drivers.migrations
+    corridor.drivers.models
     corridor.drivers.tasks
+    corridor.drivers.tests
 allow_indirect_imports = True
 
 [importlinter:contract:events-private]
@@ -214,9 +235,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.events.models
     corridor.events.api
+    corridor.events.apps
+    corridor.events.migrations
+    corridor.events.models
     corridor.events.tasks
+    corridor.events.tests
 allow_indirect_imports = True
 
 [importlinter:contract:fleet-private]
@@ -241,9 +265,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.fleet.models
     corridor.fleet.api
+    corridor.fleet.apps
+    corridor.fleet.migrations
+    corridor.fleet.models
     corridor.fleet.tasks
+    corridor.fleet.tests
 allow_indirect_imports = True
 
 [importlinter:contract:geofencing-private]
@@ -268,9 +295,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.geofencing.models
     corridor.geofencing.api
+    corridor.geofencing.apps
+    corridor.geofencing.migrations
+    corridor.geofencing.models
     corridor.geofencing.tasks
+    corridor.geofencing.tests
 allow_indirect_imports = True
 
 [importlinter:contract:identity-private]
@@ -295,9 +325,19 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.identity.models
+    corridor.identity.admin
     corridor.identity.api
+    corridor.identity.apps
+    corridor.identity.auth
+    corridor.identity.local_issuer
+    corridor.identity.management
+    corridor.identity.migrations
+    corridor.identity.models
+    corridor.identity.permissions
+    corridor.identity.providers
     corridor.identity.tasks
+    corridor.identity.tests
+    corridor.identity.tokens
 allow_indirect_imports = True
 
 [importlinter:contract:notifications-private]
@@ -322,9 +362,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.notifications.models
     corridor.notifications.api
+    corridor.notifications.apps
+    corridor.notifications.migrations
+    corridor.notifications.models
     corridor.notifications.tasks
+    corridor.notifications.tests
 allow_indirect_imports = True
 
 [importlinter:contract:realtime-private]
@@ -349,9 +392,14 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.realtime.models
     corridor.realtime.api
+    corridor.realtime.apps
+    corridor.realtime.consumers
+    corridor.realtime.migrations
+    corridor.realtime.models
+    corridor.realtime.routing
     corridor.realtime.tasks
+    corridor.realtime.tests
 allow_indirect_imports = True
 
 [importlinter:contract:shipments-private]
@@ -376,9 +424,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.shipments.models
     corridor.shipments.api
+    corridor.shipments.apps
+    corridor.shipments.migrations
+    corridor.shipments.models
     corridor.shipments.tasks
+    corridor.shipments.tests
 allow_indirect_imports = True
 
 [importlinter:contract:tenants-private]
@@ -403,9 +454,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.tenants.models
     corridor.tenants.api
+    corridor.tenants.apps
+    corridor.tenants.migrations
+    corridor.tenants.models
     corridor.tenants.tasks
+    corridor.tenants.tests
 allow_indirect_imports = True
 
 [importlinter:contract:tracking-private]
@@ -430,9 +484,12 @@ source_modules =
     corridor.trips
     corridor.core
 forbidden_modules =
-    corridor.tracking.models
     corridor.tracking.api
+    corridor.tracking.apps
+    corridor.tracking.migrations
+    corridor.tracking.models
     corridor.tracking.tasks
+    corridor.tracking.tests
 allow_indirect_imports = True
 
 [importlinter:contract:trips-private]
@@ -457,7 +514,10 @@ source_modules =
     corridor.tracking
     corridor.core
 forbidden_modules =
-    corridor.trips.models
     corridor.trips.api
+    corridor.trips.apps
+    corridor.trips.migrations
+    corridor.trips.models
     corridor.trips.tasks
+    corridor.trips.tests
 allow_indirect_imports = True
