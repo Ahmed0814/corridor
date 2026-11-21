@@ -156,6 +156,10 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+          # False positive: an example OpenSSH key in the docstring of autobahn's key
+          # parser (autobahn is a daphne dependency). Public, identical in every install.
+          # Secret scanning stays on for every other file in the image.
+          skip-files: "/opt/venv/lib/python3.12/site-packages/autobahn/wamp/cryptosign.py,/opt/venv/lib/python3.12/site-packages/autobahn/wamp/__pycache__/cryptosign.cpython-312.pyc"
       - name: Trivy scan (web image)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
