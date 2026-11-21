@@ -27,7 +27,7 @@ type State =
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const redirectUri = AuthSession.makeRedirectUri({ scheme: AUTH.redirectScheme, path: AUTH.redirectPath });
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+  const [request, , promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: AUTH.clientId,
       redirectUri,
@@ -58,31 +58,32 @@ export default function App() {
     loadSession().then(showProfile, () => setState({ kind: 'signedOut' }));
   }, [showProfile]);
 
-  // Finish the authorization-code + PKCE exchange when the browser redirects back.
-  useEffect(() => {
-    if (!response) return;
-    if (response.type === 'error') {
+  // Open the system browser, then finish the authorization-code + PKCE exchange with the result.
+  const signIn = async () => {
+    const result = await promptAsync();
+    if (result.type === 'error') {
       setState({ kind: 'signedOut', message: describeError(null) });
       return;
     }
-    if (response.type !== 'success' || !request?.codeVerifier) return;
+    if (result.type !== 'success' || !request?.codeVerifier) return; // cancelled or dismissed
     setState({ kind: 'loading' });
-    AuthSession.exchangeCodeAsync(
-      {
-        clientId: AUTH.clientId,
-        code: response.params.code,
-        redirectUri,
-        extraParams: { code_verifier: request.codeVerifier },
-      },
-      discovery,
-    )
-      .then(async (token) => {
-        const session = toStoredSession(token, Date.now());
-        await saveSession(session);
-        await showProfile(session);
-      })
-      .catch(() => setState({ kind: 'signedOut', message: describeError(null) }));
-  }, [response, request, redirectUri, showProfile]);
+    try {
+      const token = await AuthSession.exchangeCodeAsync(
+        {
+          clientId: AUTH.clientId,
+          code: result.params.code,
+          redirectUri,
+          extraParams: { code_verifier: request.codeVerifier },
+        },
+        discovery,
+      );
+      const session = toStoredSession(token, Date.now());
+      await saveSession(session);
+      await showProfile(session);
+    } catch {
+      setState({ kind: 'signedOut', message: describeError(null) });
+    }
+  };
 
   const signOut = async () => {
     await clearSession();
@@ -105,7 +106,7 @@ export default function App() {
           <Pressable
             accessibilityRole="button"
             disabled={!request}
-            onPress={() => promptAsync()}
+            onPress={signIn}
             style={({ pressed }) => [styles.button, (!request || pressed) && styles.buttonDim]}
           >
             <Text style={styles.buttonText}>Sign in with your phone number</Text>

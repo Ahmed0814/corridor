@@ -21,7 +21,12 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
-RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
+# The runtime only executes `node server.js`. The package managers bundled in the base image
+# (npm, npx, corepack, yarn) are never used here, and npm's own dependencies carried HIGH CVEs
+# (undici 6.28.0, brace-expansion 5.0.9) that failed the CI Trivy scan. Remove them.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-v* \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+ && addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public

@@ -54,6 +54,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-047 | Client IP and user agent only in audit rows, never in logs | Decided |
 | D-048 | Driver app redirect via its custom URL scheme | Decided |
 | D-049 | Driver app unit tests with `node --test` | Decided |
+| D-050 | No package managers in the web runtime image | Decided |
 
 ---
 
@@ -209,3 +210,6 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-049 Driver app unit tests with `node --test`
 **Choice:** pure logic (session expiry, refresh, error mapping) lives in React Native-free modules and is tested with Node 24's built-in runner, which runs TypeScript natively. Node types are referenced only from test files (TypeScript 6 no longer loads `@types/*` by default), so app code cannot use Node APIs that do not exist on phones. Component and device tests (Jest/Detox) arrive in Phase 5. **Trade-off:** no UI tests for the sign-in screen yet.
+
+## D-050 No package managers in the web runtime image
+**Context:** The CI Trivy scan of `corridor-web:dev` failed on 6 HIGH CVEs (undici 6.28.0: CVE-2026-87018, CVE-2026-19534, CVE-2026-109869, CVE-2026-109383; brace-expansion 5.0.9: CVE-2026-102278, CVE-2026-102276). Both sit inside **npm**, which the official `node:24.22.3-alpine` image bundles. Our own dependencies use fixed versions and none ships in the standalone output. **Choice:** the runtime stage deletes npm, npx, corepack and yarn. It only runs `node server.js`, and the build stages keep npm. A remote Trivy scan of the base image with those directories excluded reports 0 HIGH/CRITICAL findings. **Trade-off:** no `npm` inside the running container for debugging (use the build stage image instead). The CI step "Report scan findings as annotations" makes any future scan failure readable from the public API.

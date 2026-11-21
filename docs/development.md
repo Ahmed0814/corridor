@@ -52,11 +52,25 @@ Two DLLs that `libgdal` needs are missing from the PostGIS bundle's `bin/` and w
 
 ### Backend
 
-`backend/.env` (git-ignored, only read when `DJANGO_ENV` is development or test):
+**Database roles (once per cluster).** The app never connects as a superuser (DECISIONS D-007,
+D-044). Create the roles with throwaway local passwords, as the cluster superuser:
+
+```bash
+export PGPASSWORD=devonly-postgres   # the local cluster superuser from initdb
+for db in template1 corridor; do
+  .devtools/pgsql/bin/psql.exe -h localhost -U postgres -d "$db" -v ON_ERROR_STOP=1     -v migrator_password=corridor_migrator_local -v app_password=corridor_app_local     -v relay_password=corridor_relay_local -v platform_password=corridor_platform_local     -v allow_createdb=true -f backend/db/bootstrap_roles.sql
+done
+```
+(The `corridor` database must be owned by `corridor_owner`, with PostGIS enabled in it and in
+`template1`; see `docker/postgres/init/` for the same steps compose runs.)
+
+`backend/.env` (git-ignored, only read when `DJANGO_ENV` is development or test). No database URLs
+are needed locally: settings default to `corridor_app` for requests, `corridor_platform` for the
+audited Super Admin path and `corridor_migrator` for migrations, all with the `<role>_local`
+passwords above.
 
 ```
 DJANGO_ENV=development
-DATABASE_URL=postgis://corridor:corridor@localhost:5432/corridor
 GDAL_LIBRARY_PATH=D:/corridor/.devtools/pgsql/bin/libgdal-39.dll
 GEOS_LIBRARY_PATH=D:/corridor/.devtools/pgsql/bin/libgeos_c.dll
 ```
@@ -64,12 +78,24 @@ GEOS_LIBRARY_PATH=D:/corridor/.devtools/pgsql/bin/libgeos_c.dll
 ```bash
 cd backend
 uv sync                                   # Python 3.12 venv (uv installs 3.12 if missing)
-uv run python manage.py migrate
-uv run pytest                             # Redis tests skip if Redis is not running
+# Migrations run as the migration role, never as the app role:
+DATABASE_URL=postgis://corridor_migrator:corridor_migrator_local@localhost:5432/corridor   uv run python manage.py migrate
+uv run pytest                             # creates the test DB as corridor_migrator, runs as corridor_app
 uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run lint-imports
 uv run uvicorn config.asgi:application --port 8000     # api
 uv run daphne -p 8001 config.asgi:application          # realtime
 ```
+
+**Signing in locally.** With `AUTH_ISSUER_MODE=local` (the default in development), the API serves
+a development stand-in for Cognito at `/dev-auth/*`. Its page asks only for an email or phone
+number, with **no password check**, and it is refused in staging and production (D-042). Create a
+demo company and its owner with:
+
+```bash
+uv run python manage.py create_tenant --slug demo --name "DEMO — Freight"   --owner-email owner@demo.test --reason "local dev" --demo
+```
+Then sign in at http://localhost:3000 as `owner@demo.test`, ticking "TOTP MFA enrolled" (owners
+need MFA). Invite drivers by phone number from there.
 
 The Celery worker and beat need the SQS-compatible broker (ElasticMQ), which only runs in Docker,
 so the beat → SQS → worker path is verified in CI's compose job.

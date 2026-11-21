@@ -125,7 +125,7 @@ jobs:
         run: npm audit --audit-level=high
 
   mobile:
-    name: driver-mobile (types, tests, expo-doctor)
+    name: driver-mobile (lint, types, tests, expo-doctor)
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -138,6 +138,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/driver-mobile/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm run typecheck
       - name: Unit tests (session logic, node --test)
         run: npm test
