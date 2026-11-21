@@ -8,6 +8,7 @@ development/test (hard rule 6).
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -121,7 +122,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # GeoDjango native libraries (only needed when not on the system path, e.g. Windows dev).
 GDAL_LIBRARY_PATH = env.str("GDAL_LIBRARY_PATH", default=None)
 GEOS_LIBRARY_PATH = env.str("GEOS_LIBRARY_PATH", default=None)
-if os.name == "nt" and GDAL_LIBRARY_PATH:
+if sys.platform == "win32" and GDAL_LIBRARY_PATH:  # sys.platform so mypy narrows per OS
     # Python on Windows ignores PATH for dependent DLLs; register the bundle directory.
     os.add_dll_directory(str(Path(GDAL_LIBRARY_PATH).parent))
 
