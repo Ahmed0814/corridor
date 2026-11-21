@@ -486,6 +486,7 @@ source_modules =
 forbidden_modules =
     corridor.tracking.api
     corridor.tracking.apps
+    corridor.tracking.archive
     corridor.tracking.migrations
     corridor.tracking.models
     corridor.tracking.tasks

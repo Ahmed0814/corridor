@@ -82,6 +82,7 @@ uv sync                                   # Python 3.12 venv (uv installs 3.12 i
 DATABASE_URL=postgis://corridor_migrator:corridor_migrator_local@localhost:5432/corridor   uv run python manage.py migrate
 uv run pytest                             # creates the test DB as corridor_migrator, runs as corridor_app
 uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run lint-imports
+../scripts/check_backend.sh                # everything the CI backend job runs, before pushing
 uv run uvicorn config.asgi:application --port 8000     # api
 uv run daphne -p 8001 config.asgi:application          # realtime
 ```
