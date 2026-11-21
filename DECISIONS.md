@@ -45,6 +45,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-038 | Accepted moderate npm advisory (minimatch) | Decided (revisit) |
 | D-039 | URL prefixes per web area | Decided |
 | D-040 | Health endpoints outside request transactions | Decided |
+| D-041 | GDAL >= 3.9 everywhere (Debian trixie base) | Decided |
 
 ---
 
@@ -173,3 +174,6 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-040 Health endpoints outside request transactions
 **Context:** `ATOMIC_REQUESTS` (needed for `SET LOCAL app.tenant_id`) would open a DB transaction for every probe. **Choice:** `/healthz/live` and `/healthz/ready` are `non_atomic_requests`. Liveness touches no dependency, and readiness runs its own `SELECT 1` and Redis `PING`.
+
+## D-041 GDAL >= 3.9 everywhere (Debian trixie base)
+**Context:** The first CI run failed `manage.py check --fail-level WARNING` with Django's `gis.W001`: GDAL older than 3.9 cannot block file and network access triggered by malicious spatial references. Ubuntu 24.04 (CI) ships GDAL 3.8.4 and Debian bookworm (the image) ships 3.6.2. Locally it passed only because the PostGIS bundle carries GDAL 3.13. **Choice:** the backend image uses `python:3.12.16-slim-trixie` (GDAL 3.10.3), and the CI backend job runs inside that same image, so CI tests the production GDAL. The warning stays an error, and is not silenced. **Trade-off:** trixie is newer than bookworm, so some package names differ (`libcurl4t64`).

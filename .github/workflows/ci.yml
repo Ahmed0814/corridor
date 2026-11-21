@@ -18,6 +18,9 @@ jobs:
   backend:
     name: backend (lint, types, boundaries, migrations, tests)
     runs-on: ubuntu-24.04
+    # Same OS and GDAL (3.10) as the production image; Ubuntu 24.04's GDAL 3.8 fails gis.W001.
+    container:
+      image: python:3.12.16-slim-trixie
     defaults:
       run:
         working-directory: backend
@@ -39,19 +42,25 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 20
     env:
-      DATABASE_URL: postgis://corridor:corridor@localhost:5432/corridor
-      REDIS_URL: redis://localhost:6379/0
+      # Inside a job container, services are reached by their service name.
+      DATABASE_URL: postgis://corridor:corridor@postgres:5432/corridor
+      REDIS_URL: redis://redis:6379/0
       REQUIRE_SERVICES: "1"   # tests needing Redis fail instead of skipping
+      UV_PYTHON_DOWNLOADS: never   # use the image's Python 3.12
     steps:
+      - name: System packages (GDAL for GeoDjango, git for checkout and diff checks)
+        working-directory: /
+        run: apt-get update && apt-get install -y --no-install-recommends gdal-bin git ca-certificates
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: GeoDjango system libraries
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin
+      - name: Trust the workspace for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: GDAL version (must be >= 3.9)
+        run: gdalinfo --version
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: "0.12.12"
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
-      - run: uv python install 3.12
       - run: uv sync --frozen
       - name: Ruff lint
         run: uv run ruff check .

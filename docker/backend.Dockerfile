@@ -8,7 +8,7 @@
 FROM ghcr.io/astral-sh/uv:0.12.12 AS uv
 
 # --------------------------------------------------------------------------- builder
-FROM python:3.12.16-slim-bookworm AS builder
+FROM python:3.12.16-slim-trixie AS builder
 COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -19,10 +19,12 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # --------------------------------------------------------------------------- runtime
-FROM python:3.12.16-slim-bookworm AS runtime
-# GeoDjango native libraries (GDAL pulls GEOS and PROJ). libcurl for kombu's SQS transport.
+FROM python:3.12.16-slim-trixie AS runtime
+# GeoDjango native libraries (GDAL pulls GEOS and PROJ). Debian trixie ships GDAL 3.10:
+# Django's gis.W001 needs >= 3.9 to block file/network access from malicious spatial
+# references (DECISIONS D-041). libcurl for kombu's SQS transport.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends gdal-bin libcurl4 \
+ && apt-get install -y --no-install-recommends gdal-bin libcurl4t64 \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app
