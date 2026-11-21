@@ -1,0 +1,131 @@
+# Local development stack (MASTER_PROMPT Phase 1).
+#   docker compose up --build
+# api      http://localhost:8000   (health: /healthz/ready, docs: /api/v1/docs)
+# realtime ws://localhost:8001/ws/v1/ping/
+# web      http://localhost:3000
+# All credentials below are local-only placeholders, never used outside this file.
+
+name: corridor
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: docker/backend.Dockerfile
+  image: corridor-backend:dev
+  environment: &backend-env
+    DJANGO_ENV: development
+    DJANGO_DEBUG: "false"
+    LOG_FORMAT: json
+    DATABASE_URL: postgis://corridor:corridor@db:5432/corridor
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: sqs://local:local@elasticmq:9324
+    SQS_IS_SECURE: "false"
+    AWS_REGION: elasticmq
+    AWS_ACCESS_KEY_ID: local
+    AWS_SECRET_ACCESS_KEY: local
+    SQS_QUEUE_PREFIX: corridor-development-
+    SENTRY_DSN: ${SENTRY_DSN:-}
+  depends_on: &backend-deps
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    elasticmq:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgis/postgis:16-3.7
+    environment:
+      POSTGRES_DB: corridor
+      POSTGRES_USER: corridor
+      POSTGRES_PASSWORD: corridor
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corridor -d corridor"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4.12-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  elasticmq:
+    image: softwaremill/elasticmq-native:1.7.1
+    ports: ["127.0.0.1:9324:9324"]
+    volumes:
+      - ./docker/elasticmq.conf:/opt/elasticmq.conf:ro
+    healthcheck:
+      # The image has no curl/wget; probe the SQS port from bash.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9324' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *backend
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    command: ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000",
+              "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports: ["127.0.0.1:8000:8000"]
+
+  realtime:
+    <<: *backend
+    command: ["daphne", "-b", "0.0.0.0", "-p", "8001", "--proxy-headers", "config.asgi:application"]
+    ports: ["127.0.0.1:8001:8001"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8001), 2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "config", "worker", "-Q", "default,events", "--loglevel", "INFO",
+              "--concurrency", "2"]
+    healthcheck:
+      disable: true
+
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "config", "beat", "--loglevel", "INFO",
+              "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    image: corridor-web:dev
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

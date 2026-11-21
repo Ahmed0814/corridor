@@ -1,0 +1,30 @@
+{
+  "App": {
+    "name": "Corridor",
+    "tagline": "Logistics, container tracking and fleet operations for the Djibouti–Ethiopia corridor."
+  },
+  "Home": {
+    "chooseArea": "Choose an area",
+    "ops": "Operations",
+    "opsDescription": "Shipments, dispatch, fleet and the live map.",
+    "portal": "Customer portal",
+    "portalDescription": "Track your shipments and documents.",
+    "admin": "Platform admin",
+    "adminDescription": "Tenants, users and configuration.",
+    "status": "System status"
+  },
+  "Area": {
+    "notBuilt": "This area is not built yet. Sign-in arrives in Phase 2; screens arrive in Phases 3–6.",
+    "noData": "No data. Nothing on this page comes from a real tenant."
+  },
+  "Status": {
+    "title": "System status",
+    "api": "API",
+    "database": "Database",
+    "redis": "Redis",
+    "ok": "OK",
+    "down": "Unavailable",
+    "unreachable": "API unreachable",
+    "checkedAt": "Checked at {time}"
+  }
+}

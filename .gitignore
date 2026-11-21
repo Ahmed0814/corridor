@@ -1,0 +1,44 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+*.tfvars
+!*.tfvars.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node / Next / Expo
+node_modules/
+.next/
+out/
+.expo/
+dist/
+web-build/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local portable dev tools (Postgres/PostGIS, Redis) — see docs/development.md
+.devtools/
+backend/staticfiles/

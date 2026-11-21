@@ -1,0 +1,30 @@
+{
+  "App": {
+    "name": "Corridor",
+    "tagline": "Logistique, suivi des conteneurs et gestion de flotte pour le corridor Djibouti–Éthiopie."
+  },
+  "Home": {
+    "chooseArea": "Choisissez un espace",
+    "ops": "Opérations",
+    "opsDescription": "Expéditions, affectation, flotte et carte en direct.",
+    "portal": "Portail client",
+    "portalDescription": "Suivez vos expéditions et vos documents.",
+    "admin": "Administration de la plateforme",
+    "adminDescription": "Locataires, utilisateurs et configuration.",
+    "status": "État du système"
+  },
+  "Area": {
+    "notBuilt": "Cet espace n'est pas encore construit. La connexion arrive en phase 2 ; les écrans en phases 3 à 6.",
+    "noData": "Aucune donnée. Rien sur cette page ne provient d'un locataire réel."
+  },
+  "Status": {
+    "title": "État du système",
+    "api": "API",
+    "database": "Base de données",
+    "redis": "Redis",
+    "ok": "OK",
+    "down": "Indisponible",
+    "unreachable": "API injoignable",
+    "checkedAt": "Vérifié à {time}"
+  }
+}

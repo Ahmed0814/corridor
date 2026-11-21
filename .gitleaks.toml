@@ -1,0 +1,16 @@
+# gitleaks configuration: default rules plus a narrow allowlist for documented,
+# local-only placeholder values (never valid outside docker-compose / tests).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local-only placeholders"
+paths = [
+  '''(^|/)\.devtools/''',
+]
+regexes = [
+  '''postgis://corridor:corridor@''',
+  '''sqs://local:local@''',
+  '''local-dev-only-insecure-key-not-for-deployment''',
+  '''https://public@sentry\.invalid/1''',
+]
