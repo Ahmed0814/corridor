@@ -7,7 +7,7 @@
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
-| 5 Driver app & offline | **Implemented; automated offline tests pass. Emulator runs and human device sign-off pending** | 2026-11-21 |
+| 5 Driver app & offline | **Code done, CI green on `d3e15b3` (run 44962750043). Emulator runs and human device sign-off pending** | 2026-11-21 |
 | 6 Customer & operations | Not started | — |
 | 7 Infrastructure & deployment | Not started | — |
 | 8 Final verification | Not started | — |
@@ -399,6 +399,8 @@ Note: the upload and feed requests took about 2 s each on this memory-constraine
 | A human has signed off real-device tests (Android required, iOS if in scope) | **Pending: human** | Sign-off table in the device test plan; to be copied here when done |
 
 **Phase 5 is not complete until a person runs the device and emulator cases and signs them off.**
+
+CI: all five jobs green on `d3e15b3` (https://github.com/Ahmed0814/corridor/actions/runs/44962750043), including the driver-mobile job (lint, types, 29 offline tests, expo-doctor).
 
 ### Verification (real output, 2026-11-21)
 `cd apps/driver-mobile`: `npm run lint` [exit 0] · `npm run typecheck` [exit 0] · `npx expo-doctor` -> 20/20 checks passed
