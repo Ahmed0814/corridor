@@ -7,7 +7,7 @@
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
-| 5 Driver app & offline | Not started | — |
+| 5 Driver app & offline | **Implemented; automated offline tests pass. Emulator runs and human device sign-off pending** | 2026-11-21 |
 | 6 Customer & operations | Not started | — |
 | 7 Infrastructure & deployment | Not started | — |
 | 8 Final verification | Not started | — |
@@ -381,6 +381,54 @@ Note: the upload and feed requests took about 2 s each on this memory-constraine
 
 ---
 
+## Phase 5 — Driver app and offline
+
+### What was built (`apps/driver-mobile`)
+- **Durable queue** (`src/offline/queue.ts`): every GPS fix is saved to SQLite before any network call; deleted only after the server acknowledges it (accepted or duplicate); rejected events are kept with their reason and never resent; a persistent per-device sequence number.
+- **Sync engine** (`src/offline/sync.ts`): batches of ≤ 500, oldest first; retry with exponential backoff; interrupted batches recovered through server dedupe; malformed batches bisected; 401 pauses uploads (D-065); one sync round at a time.
+- **Capture** (`src/tracking/`): background location task defined at module load (`index.ts`), Android foreground service with a persistent notification, permissions (foreground, then background), on-device thinning (D-063), mock fixes dropped (D-064), device id bound to the session (D-057), HTTP transport with token refresh and timeouts.
+- **Driver UI**: assigned trips with start / pause / resume / complete (Idempotency-Key on every action). Starting a trip starts tracking; completing uploads the queue, then stops tracking. **Status card**: tracking active/stopped read from the OS (never assumed), online/offline, upload state, last successful sync, waiting-to-upload and refused counts, last GPS fix, permission and mock-location warnings, maker-specific battery-optimisation steps with a button to open Android's settings.
+- **Builds**: `eas.json` profiles (development / preview / production), `expo-dev-client`, background-location config in `app.json`; `docs/mobile/build-and-credentials.md`.
+- **Device test plan**: `docs/mobile/device-test-plan.md` (16 cases, devices incl. Tecno/Infinix and Samsung, emulator script, sign-off table).
+
+### Definition of Done — status
+| Criterion | Status | Evidence |
+|---|---|---|
+| Emulator tests pass for network loss, restart, interrupted batch and 10,000-event sync | **Equivalent automated tests pass; emulator runs NOT done** | No Android SDK on this workstation, and too little memory for an emulator (Postgres already crashed once from resource exhaustion). The same scenarios run against the app's real queue/sync code in Node (below) and against the real API; the emulator script is in the device test plan (device D) |
+| The device test plan is written | **Done** | `docs/mobile/device-test-plan.md` |
+| A human has signed off real-device tests (Android required, iOS if in scope) | **Pending: human** | Sign-off table in the device test plan; to be copied here when done |
+
+**Phase 5 is not complete until a person runs the device and emulator cases and signs them off.**
+
+### Verification (real output, 2026-11-21)
+`cd apps/driver-mobile`: `npm run lint` [exit 0] · `npm run typecheck` [exit 0] · `npx expo-doctor` -> 20/20 checks passed
+```
+$ npm test   (node --test, node:sqlite)
+✔ local persistence: saves every event before any network call / never queues the same event twice /
+  keeps the queue and sequence across an app restart (database closed and reopened)
+✔ network loss and reconnection: keeps events while offline, backs off, delivers on reconnection / server errors retried
+✔ interrupted batch and acknowledgements: lost response acknowledged as duplicate on retry / accepted+duplicate
+  deleted, rejected kept and never resent / malformed event isolated (422) / 401 stops until sign-in / no double send
+✔ retry backoff: exponential with jitter, capped at 5 minutes
+✔ 10,000-event queue sync
+[10k sync] 27 requests, 8 sync rounds, max batch 500, 327 ms
+✔ policy: moving/stationary cadence, mocked and older fixes dropped, event mapping, battery advice
+ℹ tests 29   ℹ pass 29   ℹ fail 0
+```
+10,000 events against the **real API** (the app's own queue + sync engine, 15 % requests dropped, 15 % responses lost after the server stored the batch):
+```json
+{ "events": 10000, "pendingAfter": 0, "rejectedLocally": 0, "serverAccepted": 9000, "serverDuplicates": 1000,
+  "serverRejected": 0, "requests": 27, "requestsDropped": 5, "responsesLost": 2, "syncRounds": 8,
+  "seconds": 8.3, "eventsPerSecond": 1207 }
+```
+Database check for that trip: `TRP-261121-CE7A69 | rows 10000 | distinct events 10000 | late_upload flags 6465 | blocking flags 0`. Every event was stored exactly once, including the 1,000 whose responses were lost, which came back as `duplicate` on retry and were then cleared from the phone.
+
+### Needs a human
+- Run `docs/mobile/device-test-plan.md` on at least one Tecno/Infinix, one Samsung and an Android 14+ phone, plus the emulator script, then record the sign-off here.
+- Accounts and credentials: Expo organisation, Android keystore backup, Google Play (incl. the background-location declaration), Apple (if iOS), EAS environment values (`docs/mobile/build-and-credentials.md`).
+
+---
+
 ## Open issues
 1. **Docker is not installed** on this workstation. Mitigated by D-032 (portable Postgres/PostGIS/Redis for local tests) and the CI compose job, which is green. Optional: install Docker Desktop with WSL2 to run `docker compose up` locally.
 2. **Terraform is not installed** locally. Not needed until Phase 7.
@@ -410,4 +458,5 @@ Note: the upload and feed requests took about 2 s each on this memory-constraine
 - AWS accounts and GitHub OIDC role (Phase 7)
 
 ## Needs device testing
+- **Phase 5 (now ready):** run `docs/mobile/device-test-plan.md` (cases D1–D16, devices A–E) and sign off. Production release waits for this.
 - Phase 5: real Android devices (include at least one Tecno/Infinix and one Samsung, common in the region) and iOS if in scope. A human signs off here.

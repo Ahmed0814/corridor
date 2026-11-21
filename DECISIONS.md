@@ -66,6 +66,11 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-059 | Live map polls a same-origin feed every 5 s (WebSocket push server-side) | Decided (revisit) |
 | D-060 | Development basemap: MapLibre demo tiles, configurable | Decided |
 | D-061 | GPS validation limits | Decided |
+| D-062 | Offline core as plain TypeScript over a SQL interface | Decided |
+| D-063 | Capture cadence and on-device thinning | Decided (tune after device tests) |
+| D-064 | Mock-location fixes are never recorded | Decided |
+| D-065 | Malformed batches are bisected; 401 pauses uploads | Decided |
+| D-066 | Driver app navigation without Expo Router (for now) | Decided (revisit) |
 
 ---
 
@@ -257,3 +262,18 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-061 GPS validation limits
 **Choice (tenant-independent):** reject coordinates outside ±90/±180 and (0, 0); reject accuracy outside 0–100 km; reject timestamps without a timezone, more than 5 min in the future, or older than the 12-month retention window; reject without an authorized session, on vehicle or device mismatch, and on reused event ids. Flag (stored, never the latest) accuracy over 100 m, out-of-order points (recorded at or before the current latest), implied speed over 150 km/h, and clocks ahead by more than 60 s. Informational flags: while paused, uploaded more than 1 h late, network (non-GPS) fix. A closed session accepts late uploads for 24 h, only for points recorded while it was open (D-013). **Trade-off:** fixed limits; tenant-tunable later if pilots need it.
+
+## D-062 Offline core as plain TypeScript over a SQL interface
+**Choice:** the queue (`LocationQueue`) and sync engine (`SyncEngine`) have no React Native imports. They depend on a 4-method `SqlDb` interface (`exec`, `run`, `all`, `transaction`) implemented by expo-sqlite on the phone and by Node 24's built-in `node:sqlite` in tests (the same SQLite engine). Tests use a file database to prove restarts, and a fake server with switchable failures. `scripts/sync-against-api.mts` runs the same classes against a real API. **Trade-off:** constructor parameter properties are avoided, since Node's type stripping cannot run them.
+
+## D-063 Capture cadence and on-device thinning
+**Choice:** the OS is asked for a fix every 20 s (high accuracy, foreground service on Android). On the device, a fix is kept when it is the first, when moving (≥ 2 m/s), when the truck moved ≥ 25 m, or as a stationary heartbeat every 2 min (the brief's 15–30 s moving and 1–3 min stationary). Each kept fix is saved to SQLite before any upload attempt; uploads are attempted after captures, on reconnect and every 5 s while the app is open, with backoff after failures. **Trade-off:** fixed values until device tests (D3, D4, D15) show the battery cost.
+
+## D-064 Mock-location fixes are never recorded
+**Choice:** fixes with `mocked: true` (Android mock-location providers) are dropped before they are queued, and the status card warns the driver. A faked truck position is worse than a gap. **Trade-off:** testers must use emulator route playback (which may be marked mocked on some images) with care; see the device test plan.
+
+## D-065 Malformed batches are bisected; 401 pauses uploads
+**Choice:** a whole-batch 422 (malformed request) is split in halves until the offending event is isolated and marked `invalid_payload` locally; the rest still uploads. 401/403 sets "Sign-in needed" and pauses uploads (events stay queued) until sign-in succeeds. Network errors and 5xx retry with exponential backoff (2 s → 5 min, ±20 % jitter). Server-rejected events are kept, marked, and never resent. **Trade-off:** none known.
+
+## D-066 Driver app navigation without Expo Router (for now)
+**Context:** the project's `AGENTS.md` recommends Expo Router. **Choice:** the driver app has two states (signed out, trips screen) and keeps simple state-based rendering. Expo Router will be introduced when delivery confirmation, photos and checkpoints add screens (Phase 6). **Trade-off:** a later refactor of `App.tsx`.

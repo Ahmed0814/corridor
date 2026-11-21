@@ -7,6 +7,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { ApiError, fetchMe } from './src/api';
 import { describeError, toStoredSession, type Me } from './src/auth/session';
 import { clearSession, loadSession, saveSession } from './src/auth/tokenStore';
+import { TripsScreen } from './src/screens/TripsScreen';
+import { getEngine } from './src/tracking/runtime';
 import { AUTH } from './src/config';
 
 // Completes the auth session when the redirect returns to the app (required by expo-auth-session).
@@ -45,6 +47,7 @@ export default function App() {
     }
     try {
       const { me } = await fetchMe(session);
+      getEngine().resumeAfterSignIn();
       setState({ kind: 'signedIn', me });
     } catch (error) {
       const code = error instanceof ApiError ? error.code : null;
@@ -115,21 +118,23 @@ export default function App() {
       )}
 
       {state.kind === 'signedIn' && (
-        <>
-          <Text style={styles.name}>{state.me.display_name || 'Driver'}</Text>
-          <Text style={styles.detail}>
-            {state.me.active_tenant ? state.me.active_tenant.tenant_name : 'No company'}
-          </Text>
-          <Pressable accessibilityRole="button" onPress={signOut} style={styles.linkButton}>
-            <Text style={styles.link}>Sign out</Text>
-          </Pressable>
-        </>
+        <View style={styles.signedIn}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.name}>{state.me.display_name || 'Driver'}</Text>
+              <Text style={styles.detail}>
+                {state.me.active_tenant ? state.me.active_tenant.tenant_name : 'No company'}
+              </Text>
+            </View>
+            <Pressable accessibilityRole="button" onPress={signOut} style={styles.linkButton}>
+              <Text style={styles.link}>Sign out</Text>
+            </Pressable>
+          </View>
+          {/* Location is collected only while a trip is active (consent shown before starting). */}
+          <TripsScreen />
+        </View>
       )}
 
-      <Text style={styles.status} accessibilityLabel="Tracking status: not available">
-        Tracking: not available in this build
-      </Text>
-      <Text style={styles.note}>No location is collected.</Text>
       <StatusBar style="auto" />
     </View>
   );
@@ -153,6 +158,6 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   linkButton: { padding: 8 },
   link: { fontSize: 16, color: '#1f4fd1', textDecorationLine: 'underline' },
-  status: { fontSize: 16, marginTop: 24 },
-  note: { fontSize: 14, color: '#555', textAlign: 'center' },
+  signedIn: { flex: 1, width: '100%', paddingTop: 48 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16 },
 });
