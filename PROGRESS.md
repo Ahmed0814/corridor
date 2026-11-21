@@ -5,7 +5,7 @@
 | 0 Discovery & architecture | **Done** (DoD evidence below) | 2026-11-20 |
 | 1 Foundation | **Done**: CI green incl. `docker compose up` + smoke tests (run 44924202637) | 2026-11-21 |
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
-| 3 Core logistics | **Implemented and verified locally**; awaiting its CI run | 2026-11-21 |
+| 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
 | 4 GPS tracking | Not started | — |
 | 5 Driver app & offline | Not started | — |
 | 6 Customer & operations | Not started | — |
@@ -293,6 +293,11 @@ PASS  a second cancel is refused by the state machine  ?error=invalid_transition
 PASS  the refusal is shown on the page with a reference
 7/7 form checks passed
 ```
+
+### CI
+All five jobs green on the first run: https://github.com/Ahmed0814/corridor/actions/runs/44958080301
+(backend incl. migrations as `corridor_migrator` and 190 tests as `corridor_app`; web; driver-mobile; gitleaks;
+docker compose up with the relay role + smoke tests + Trivy on both images).
 
 ### Not in Phase 3 (by design)
 - Opening a GPS tracking session on trip start, geofence-based border arrival, ETA: Phase 4/6.
