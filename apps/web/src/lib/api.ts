@@ -64,3 +64,48 @@ export async function apiGet<T>(path: string): Promise<ApiResult<T>> {
     return { ok: false, status: 0, error: { code: "unreachable", message: "", requestId: null } };
   }
 }
+
+/**
+ * Server-side mutation (POST/PATCH) with the user's token, company and an Idempotency-Key.
+ * Forms render a fresh key, so a double submit replays the first result instead of acting twice.
+ */
+export async function apiSend<T>(
+  method: "POST" | "PATCH",
+  path: string,
+  body: unknown,
+  idempotencyKey: string,
+): Promise<ApiResult<T>> {
+  const store = await cookies();
+  const token = store.get(COOKIES.access)?.value;
+  if (!token) return { ok: false, status: 401, error: { code: "unauthenticated", message: "", requestId: null } };
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "Idempotency-Key": idempotencyKey,
+  };
+  const tenant = store.get(COOKIES.tenant)?.value;
+  if (tenant) headers["X-Tenant"] = tenant;
+  try {
+    const response = await fetch(`${apiBase()}/api/v1${path}`, {
+      method,
+      headers,
+      body: JSON.stringify(body ?? {}),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+    const data: unknown = await response.json().catch(() => null);
+    if (response.ok) return { ok: true, data: data as T };
+    const error = (data as { error?: { code?: string; message?: string; request_id?: string } } | null)?.error;
+    return {
+      ok: false,
+      status: response.status,
+      error: {
+        code: error?.code ?? "error",
+        message: error?.message ?? "",
+        requestId: error?.request_id ?? response.headers.get("x-request-id"),
+      },
+    };
+  } catch {
+    return { ok: false, status: 0, error: { code: "unreachable", message: "", requestId: null } };
+  }
+}

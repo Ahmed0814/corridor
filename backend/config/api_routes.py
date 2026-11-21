@@ -7,11 +7,18 @@ files (module boundaries, D-005).
 from __future__ import annotations
 
 from corridor.audit.api import router as audit_router
+from corridor.containers.api import router as containers_router
 from corridor.core.api import api, meta
+from corridor.customers.api import router as customers_router
+from corridor.dispatch.api import router as dispatch_router
+from corridor.drivers.api import router as drivers_router
+from corridor.fleet.api import router as fleet_router
 from corridor.identity.api import me_router, platform_router
 from corridor.identity.api import router as identity_router
 from corridor.identity.services import PUBLIC_ATTR
+from corridor.shipments.api import router as shipments_router
 from corridor.tenants.api import router as tenants_router
+from corridor.trips.api import router as trips_router
 
 __all__ = ["api"]
 
@@ -22,3 +29,14 @@ api.add_router("", identity_router)
 api.add_router("", tenants_router)
 api.add_router("", audit_router)
 api.add_router("", platform_router)
+# Phase 3: core logistics
+for _router in (
+    customers_router,
+    containers_router,
+    fleet_router,
+    drivers_router,
+    shipments_router,
+    trips_router,
+    dispatch_router,
+):
+    api.add_router("", _router)

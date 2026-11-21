@@ -27,6 +27,8 @@ app.conf.update(
         # Phase 1: proves beat → SQS → worker end to end. Real jobs (outbox relay,
         # freshness sweep, partitions, retention) are added in later phases.
         "heartbeat": {"task": "corridor.events.tasks.heartbeat", "schedule": 60.0},
+        # Transactional outbox -> SQS (D-014, D-051). Business events, not GPS.
+        "relay-outbox": {"task": "corridor.events.tasks.relay_outbox", "schedule": 5.0},
     },
 )
 app.autodiscover_tasks()

@@ -20,6 +20,8 @@ x-backend: &backend
     # audited Super Admin path. Neither owns tables nor bypasses RLS.
     DATABASE_URL: postgis://corridor_app:corridor_app_local@db:5432/corridor
     PLATFORM_DATABASE_URL: postgis://corridor_platform:corridor_platform_local@db:5432/corridor
+    # Outbox relay (D-051): reads outbox_events across tenants, nothing else.
+    RELAY_DATABASE_URL: postgis://corridor_relay:corridor_relay_local@db:5432/corridor
     # Local stand-in for Cognito (D-006); refused by settings outside development/test.
     AUTH_ISSUER_MODE: local
     LOCAL_ISSUER_KEY_FILE: /devauth/issuer_key.pem

@@ -55,6 +55,12 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-048 | Driver app redirect via its custom URL scheme | Decided |
 | D-049 | Driver app unit tests with `node --test` | Decided |
 | D-050 | No package managers in the web runtime image | Decided |
+| D-051 | Outbox relay on its own database role | Decided |
+| D-052 | Trip assignments owned by trips; dispatch orchestrates | Decided |
+| D-053 | Cursor pagination on every list | Decided |
+| D-054 | License lookup hash ignores case, spaces and punctuation | Decided |
+| D-055 | Delivery in Phase 3 needs status + recipient; evidence in Phase 6 | Decided |
+| D-056 | Ops screens use server actions with per-form idempotency keys | Decided |
 
 ---
 
@@ -213,3 +219,21 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-050 No package managers in the web runtime image
 **Context:** The CI Trivy scan of `corridor-web:dev` failed on 6 HIGH CVEs (undici 6.28.0: CVE-2026-87018, CVE-2026-19534, CVE-2026-109869, CVE-2026-109383; brace-expansion 5.0.9: CVE-2026-102278, CVE-2026-102276). Both sit inside **npm**, which the official `node:24.22.3-alpine` image bundles. Our own dependencies use fixed versions and none ships in the standalone output. **Choice:** the runtime stage deletes npm, npx, corepack and yarn. It only runs `node server.js`, and the build stages keep npm. A remote Trivy scan of the base image with those directories excluded reports 0 HIGH/CRITICAL findings. **Trade-off:** no `npm` inside the running container for debugging (use the build stage image instead). The CI step "Report scan findings as annotations" makes any future scan failure readable from the public API.
+
+## D-051 Outbox relay on its own database role
+**Context:** The relay must read unpublished business events of *every* tenant, but RLS hides other tenants from the app role, and no role may bypass RLS. **Choice:** a `relay` database alias logs in as `corridor_relay`, which has one `relay_all` policy on `outbox_events`: SELECT, plus UPDATE of `published_at` and `attempts` only. It has no access to any other table (tested) and no BYPASSRLS. The relay runs from beat every 5 s with `FOR UPDATE SKIP LOCKED`, publishes to SQS through Celery, and marks a row published only after the broker accepted it. Events of rolled-back transactions never exist (tested). Settings require `RELAY_DATABASE_URL` in staging/production. **Trade-off:** one more credential in Secrets Manager, and up to ~5 s latency for business events (GPS never uses the outbox).
+
+## D-052 Trip assignments owned by trips; dispatch orchestrates
+**Context:** The brief lists `trip_assignments` under dispatch, but every trip transition (start, pause, complete, release) needs the active assignment, which would make `trips` and `dispatch` import each other's internals. **Choice:** the `trips` module owns `trips`, `trip_shipments`, `trip_assignments` and `trip_events`. The `dispatch` module is the orchestration API (`POST /dispatch`: create a trip, assign vehicle and driver, and dispatch its shipments in one transaction, all or nothing; tested). Conflicting assignments are stopped by partial unique indexes (vehicle, driver, trailer, trip: one active each). The concurrent race has exactly one winner, and the loser gets 409 `assignment_conflict` (tested with two real threads). **Trade-off:** `dispatch` is a thin module.
+
+## D-053 Cursor pagination on every list
+**Choice:** keyset pagination on `(created_at DESC, id DESC)` with an opaque cursor; `limit` defaults to 50, max 200. Stable under concurrent inserts, with no OFFSET scans. **Trade-off:** no "jump to page N" (not needed by any screen).
+
+## D-054 License lookup hash ignores case, spaces and punctuation
+**Context:** The duplicate-license check compares keyed hashes without decrypting. "ET-123456", "et 123456" and "ET123456" are the same license and must collide. A test caught that the first version treated them as different. **Choice:** the hash input is upper-cased with every non-alphanumeric character removed; the encrypted value keeps the formatting as entered. **Trade-off:** none.
+
+## D-055 Delivery in Phase 3 needs status + recipient; evidence in Phase 6
+**Choice:** `deliver_shipment` is allowed only from `in_transit` (premature delivery from draft, confirmed, dispatched or at_border is rejected; tested), only when a trip carrying the shipment has started, and only by `delivery.confirm` holders. A driver can deliver only shipments on their own trips. It records the recipient name and time and releases the containers. Photo, signature and location evidence (the `delivery` module) arrive in Phase 6 and will become required then. **Trade-off:** until Phase 6, a delivery has no photo or signature evidence.
+
+## D-056 Ops screens use server actions with per-form idempotency keys
+**Choice:** the operations screens are server-rendered pages. Forms post to Next.js server actions that call the API with the user's session, and work without client JavaScript. Each rendered form carries a fresh `Idempotency-Key`, so a double click or resubmit replays the first result (tested over HTTP: one form submitted twice creates one customer). API errors come back as `?error=<code>&ref=<request id>` and are shown on the page. Which action buttons appear mirrors the state machine and the user's permissions (unit-tested), but the API stays the authority. **Trade-off:** full page reloads instead of in-place updates, which is acceptable for back-office forms.

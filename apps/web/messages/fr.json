@@ -57,5 +57,124 @@
       "driver": "Chauffeur",
       "customer": "Client"
     }
+  },
+  "Ops": {
+    "nav": {
+      "overview": "Vue d’ensemble",
+      "shipments": "Expéditions",
+      "dispatch": "Affectation",
+      "fleet": "Flotte",
+      "customers": "Clients"
+    },
+    "common": {
+      "create": "Créer",
+      "save": "Enregistrer",
+      "reason": "Motif",
+      "none": "Aucun",
+      "empty": "Rien pour l’instant.",
+      "back": "Retour",
+      "optional": "facultatif",
+      "status": "Statut",
+      "created": "Créé",
+      "demoNote": "Les données saisies ici sont des données réelles de l’entreprise — n’entrez pas de données de test en production."
+    },
+    "overview": {
+      "title": "Vue d’ensemble des opérations",
+      "byStatus": "Expéditions par statut",
+      "recent": "Expéditions récentes",
+      "delayed": "En retard",
+      "openTrips": "Trajets ouverts"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "confirmed": "Confirmée",
+      "dispatched": "Expédiée",
+      "in_transit": "En transit",
+      "at_border": "À la frontière",
+      "delivered": "Livrée",
+      "delivery_failed": "Échec de livraison",
+      "cancelled": "Annulée",
+      "planned": "Planifié",
+      "assigned": "Affecté",
+      "in_progress": "En cours",
+      "paused": "En pause",
+      "completed": "Terminé",
+      "aborted": "Interrompu"
+    },
+    "shipments": {
+      "title": "Expéditions",
+      "new": "Nouvelle expédition",
+      "reference": "Référence",
+      "customer": "Client",
+      "route": "Itinéraire",
+      "origin": "Origine",
+      "destination": "Destination",
+      "cargo": "Marchandise",
+      "weight": "Poids (kg)",
+      "containers": "Conteneurs",
+      "containerHint": "Maintenez Ctrl/Cmd pour en sélectionner plusieurs. Seuls les conteneurs disponibles sont listés.",
+      "delayed": "En retard",
+      "timeline": "Historique des statuts",
+      "trips": "Trajets",
+      "detail": "Expédition",
+      "recipient": "Destinataire",
+      "deliveredAt": "Livrée le",
+      "noCustomers": "Créez d’abord un client."
+    },
+    "actions": {
+      "confirm": "Confirmer",
+      "cancel": "Annuler l’expédition",
+      "border-arrival": "Enregistrer l’arrivée à la frontière",
+      "border-clearance": "Confirmer le dédouanement",
+      "deliver": "Confirmer la livraison",
+      "delivery-failed": "Enregistrer un échec de livraison",
+      "reattempt": "Nouvelle tentative de livraison",
+      "delay": "Signaler un retard",
+      "border": "Frontière (ex. Galafi, Dewele)",
+      "clearanceNote": "Ne confirmez le dédouanement qu’après la mainlevée effective de la douane. L’arrivée GPS n’est pas un dédouanement."
+    },
+    "dispatch": {
+      "title": "Affectation",
+      "intro": "Créez un trajet pour des expéditions confirmées, affectez un véhicule et un chauffeur, et expédiez — en une seule étape.",
+      "shipments": "Expéditions confirmées",
+      "vehicle": "Véhicule",
+      "driver": "Chauffeur",
+      "submit": "Expédier",
+      "noneReady": "Aucune expédition confirmée en attente.",
+      "trips": "Trajets",
+      "assignedTo": "Affecté à"
+    },
+    "fleet": {
+      "title": "Flotte",
+      "vehicles": "Véhicules",
+      "drivers": "Chauffeurs",
+      "plate": "Immatriculation",
+      "kind": "Type",
+      "assigned": "En trajet",
+      "newVehicle": "Enregistrer un véhicule",
+      "newDriver": "Ajouter un chauffeur",
+      "fullName": "Nom complet",
+      "phone": "Téléphone (E.164)",
+      "license": "Numéro de permis",
+      "licenseExpiry": "Expiration du permis",
+      "employment": "Emploi",
+      "linked": "Connexion liée",
+      "consent": "Consentement au suivi",
+      "maintenance": "En maintenance",
+      "available": "Remettre en service",
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "customers": {
+      "title": "Clients",
+      "new": "Nouveau client",
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone (E.164)"
+    },
+    "errors": {
+      "generic": "L’action a échoué.",
+      "reference": "Référence : {id}"
+    }
   }
 }

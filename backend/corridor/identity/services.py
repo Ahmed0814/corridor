@@ -14,7 +14,7 @@ from django.utils import timezone
 from corridor.audit import services as audit
 from corridor.core.api import ApiError
 from corridor.core.platform import PLATFORM_DB, PlatformActor, platform_session
-from corridor.core.tenancy import tenant_context
+from corridor.core.tenancy import current_context, tenant_context
 from corridor.identity.auth import (
     AUTHENTICATED_ATTR,
     PERMISSION_ATTR,
@@ -423,3 +423,36 @@ def platform_set_tenant_status(
                 using=PLATFORM_DB,
             )
         return PlatformTenantOut(**info.model_dump())
+
+
+# --------------------------------------------------------------------------- scope links (Phase 3)
+
+
+def _attach_profile(membership_id: uuid.UUID, *, role: str, field: str, profile_id: uuid.UUID) -> None:
+    """Link a driver/customer profile to a membership of the current tenant (RLS-scoped lookup)."""
+    m: TenantMembership | None = TenantMembership.objects.select_for_update().filter(id=membership_id).first()
+    if m is None:
+        raise ApiError(404, "not_found", "Not found.")
+    if m.role_id != role:
+        raise ApiError(409, "wrong_role", f"Only a {role} membership can be linked to this profile.")
+    current = getattr(m, field)
+    if current is not None and current != profile_id:
+        raise ApiError(409, "already_linked", "That account is linked to another profile.")
+    setattr(m, field, profile_id)
+    m.save(update_fields=[field, "updated_at"])
+    audit.record(
+        audit.MEMBERSHIP_PROFILE_LINKED,
+        tenant_id=m.tenant_id,
+        actor_user_id=current_context().user_id,
+        target_type="membership",
+        target_id=str(m.id),
+        metadata={field: str(profile_id)},
+    )
+
+
+def attach_driver_profile(membership_id: uuid.UUID, driver_id: uuid.UUID) -> None:
+    _attach_profile(membership_id, role="driver", field="driver_id", profile_id=driver_id)
+
+
+def attach_customer_profile(membership_id: uuid.UUID, customer_id: uuid.UUID) -> None:
+    _attach_profile(membership_id, role="customer", field="customer_id", profile_id=customer_id)

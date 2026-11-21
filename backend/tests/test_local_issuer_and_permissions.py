@@ -202,6 +202,8 @@ def test_local_issuer_is_refused_in_deployed_environments(django_env: str) -> No
             "DJANGO_SECRET_KEY": "x" * 50,
             "DATABASE_URL": "postgis://u:p@db/x",
             "PLATFORM_DATABASE_URL": "postgis://u:p@db/x",
+            "RELAY_DATABASE_URL": "postgis://u:p@db/x",
+            "FIELD_ENCRYPTION_KEYS": "dGVzdC1vbmx5LWZlcm5ldC1rZXktMDAwMDAwMDAwMDA=",
             "AUTH_ISSUER_MODE": "local",
         }
     )
@@ -216,6 +218,8 @@ def test_deployed_environments_default_to_cognito() -> None:
             "DJANGO_SECRET_KEY": "x" * 50,
             "DATABASE_URL": "postgis://u:p@db/x",
             "PLATFORM_DATABASE_URL": "postgis://u:p@db/x",
+            "RELAY_DATABASE_URL": "postgis://u:p@db/x",
+            "FIELD_ENCRYPTION_KEYS": "dGVzdC1vbmx5LWZlcm5ldC1rZXktMDAwMDAwMDAwMDA=",
         }
     )
     assert result.returncode == 0, result.stderr

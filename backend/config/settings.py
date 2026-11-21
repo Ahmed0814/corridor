@@ -114,6 +114,8 @@ if IS_LOCAL:
     DATABASES = {
         "default": env.db_url("DATABASE_URL", default=_LOCAL_DB.format(role="corridor_app")),
         "platform": env.db_url("PLATFORM_DATABASE_URL", default=_LOCAL_DB.format(role="corridor_platform")),
+        # Outbox relay (D-051): cross-tenant read of outbox_events only, via its own RLS policy.
+        "relay": env.db_url("RELAY_DATABASE_URL", default=_LOCAL_DB.format(role="corridor_relay")),
     }
     # Used only by the test runner to create the test database and run migrations.
     MIGRATOR_DATABASE_URL: str = env.str(
@@ -123,6 +125,7 @@ else:
     DATABASES = {
         "default": env.db_url("DATABASE_URL"),
         "platform": env.db_url("PLATFORM_DATABASE_URL"),
+        "relay": env.db_url("RELAY_DATABASE_URL"),
     }
 for _alias, _cfg in DATABASES.items():
     _cfg["ENGINE"] = "django.contrib.gis.db.backends.postgis"
@@ -132,6 +135,17 @@ for _alias, _cfg in DATABASES.items():
     _cfg["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=0 if DJANGO_ENV == "test" else 60)
     _cfg["CONN_HEALTH_CHECKS"] = True
 DATABASE_ROUTERS = ["corridor.core.platform.DefaultOnlyRouter"]
+
+# --------------------------------------------------------------------------- field encryption
+# Application-level encryption of sensitive fields such as driver license numbers (D-019).
+# Comma-separated Fernet keys, newest first (rotation: prepend a new key, re-encrypt, drop old).
+if IS_LOCAL:
+    FIELD_ENCRYPTION_KEYS: list[str] = env.list(
+        "FIELD_ENCRYPTION_KEYS",
+        default=["bG9jYWwtZGV2LW9ubHktZmVybmV0LWtleS0wMDAwMDA="],  # local-only placeholder
+    )
+else:
+    FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")  # required: from Secrets Manager
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # GeoDjango native libraries (only needed when not on the system path, e.g. Windows dev).

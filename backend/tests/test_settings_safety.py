@@ -47,6 +47,8 @@ def test_debug_is_refused_in_production() -> None:
             "DJANGO_SECRET_KEY": "x" * 50,
             "DATABASE_URL": "postgis://u:p@db/x",
             "PLATFORM_DATABASE_URL": "postgis://u:p@db/x",
+            "RELAY_DATABASE_URL": "postgis://u:p@db/x",
+            "FIELD_ENCRYPTION_KEYS": "dGVzdC1vbmx5LWZlcm5ldC1rZXktMDAwMDAwMDAwMDA=",
             "DJANGO_DEBUG": "true",
         }
     )
@@ -58,3 +60,18 @@ def test_invalid_environment_name_is_fatal() -> None:
     result = _import_settings({"DJANGO_ENV": "prod"})
     assert result.returncode != 0
     assert "Invalid DJANGO_ENV" in result.stderr
+
+
+def test_missing_field_encryption_keys_is_fatal_in_production() -> None:
+    """Driver license numbers are encrypted at rest (D-019): no key, no start."""
+    result = _import_settings(
+        {
+            "DJANGO_ENV": "production",
+            "DJANGO_SECRET_KEY": "x" * 50,
+            "DATABASE_URL": "postgis://u:p@db/x",
+            "PLATFORM_DATABASE_URL": "postgis://u:p@db/x",
+            "RELAY_DATABASE_URL": "postgis://u:p@db/x",
+        }
+    )
+    assert result.returncode != 0
+    assert "FIELD_ENCRYPTION_KEYS" in result.stderr

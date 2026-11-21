@@ -155,7 +155,8 @@ def test_global_tables_with_tenant_data_have_forced_rls(table: str) -> None:
 
 
 def test_no_table_grants_update_or_delete_on_append_only_tables() -> None:
-    for table in ("audit_logs",):
+    # Event history tables are append-only (hard rule 5, D-018).
+    for table in ("audit_logs", "shipment_events", "trip_events", "container_events", "outbox_events"):
         assert _one("SELECT has_table_privilege('corridor_app', %s, 'UPDATE')", [table]) is False
         assert _one("SELECT has_table_privilege('corridor_app', %s, 'DELETE')", [table]) is False
 

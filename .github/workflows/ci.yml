@@ -48,6 +48,7 @@ jobs:
       # database as corridor_migrator (acting as corridor_owner).
       DATABASE_URL: postgis://corridor_app:corridor_app_local@postgres:5432/corridor
       PLATFORM_DATABASE_URL: postgis://corridor_platform:corridor_platform_local@postgres:5432/corridor
+      RELAY_DATABASE_URL: postgis://corridor_relay:corridor_relay_local@postgres:5432/corridor
       MIGRATOR_DATABASE_URL: postgis://corridor_migrator:corridor_migrator_local@postgres:5432/corridor
       REDIS_URL: redis://redis:6379/0
       REQUIRE_SERVICES: "1"   # tests needing Redis fail instead of skipping

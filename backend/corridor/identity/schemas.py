@@ -10,7 +10,8 @@ from typing import Literal
 from ninja import Field, Schema
 from pydantic import ConfigDict, model_validator
 
-from corridor.identity.permissions import ClientKind, Scope
+from corridor.identity.permissions import ClientKind as ClientKind  # public re-export
+from corridor.identity.permissions import Scope as Scope  # public re-export
 
 
 @dataclass(frozen=True, slots=True)

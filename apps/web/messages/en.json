@@ -57,5 +57,124 @@
       "driver": "Driver",
       "customer": "Customer"
     }
+  },
+  "Ops": {
+    "nav": {
+      "overview": "Overview",
+      "shipments": "Shipments",
+      "dispatch": "Dispatch",
+      "fleet": "Fleet",
+      "customers": "Customers"
+    },
+    "common": {
+      "create": "Create",
+      "save": "Save",
+      "reason": "Reason",
+      "none": "None",
+      "empty": "Nothing here yet.",
+      "back": "Back",
+      "optional": "optional",
+      "status": "Status",
+      "created": "Created",
+      "demoNote": "Data entered here is real company data — do not enter test data in production."
+    },
+    "overview": {
+      "title": "Operations overview",
+      "byStatus": "Shipments by status",
+      "recent": "Recent shipments",
+      "delayed": "Delayed",
+      "openTrips": "Open trips"
+    },
+    "status": {
+      "draft": "Draft",
+      "confirmed": "Confirmed",
+      "dispatched": "Dispatched",
+      "in_transit": "In transit",
+      "at_border": "At border",
+      "delivered": "Delivered",
+      "delivery_failed": "Delivery failed",
+      "cancelled": "Cancelled",
+      "planned": "Planned",
+      "assigned": "Assigned",
+      "in_progress": "In progress",
+      "paused": "Paused",
+      "completed": "Completed",
+      "aborted": "Aborted"
+    },
+    "shipments": {
+      "title": "Shipments",
+      "new": "New shipment",
+      "reference": "Reference",
+      "customer": "Customer",
+      "route": "Route",
+      "origin": "Origin",
+      "destination": "Destination",
+      "cargo": "Cargo",
+      "weight": "Weight (kg)",
+      "containers": "Containers",
+      "containerHint": "Hold Ctrl/Cmd to select several. Only available containers are listed.",
+      "delayed": "Delayed",
+      "timeline": "Status history",
+      "trips": "Trips",
+      "detail": "Shipment",
+      "recipient": "Recipient",
+      "deliveredAt": "Delivered at",
+      "noCustomers": "Create a customer first."
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "cancel": "Cancel shipment",
+      "border-arrival": "Record border arrival",
+      "border-clearance": "Confirm border clearance",
+      "deliver": "Confirm delivery",
+      "delivery-failed": "Record failed delivery",
+      "reattempt": "Reattempt delivery",
+      "delay": "Mark delayed",
+      "border": "Border (e.g. Galafi, Dewele)",
+      "clearanceNote": "Only confirm clearance once customs has actually released the cargo. GPS arrival is not clearance."
+    },
+    "dispatch": {
+      "title": "Dispatch",
+      "intro": "Create a trip for confirmed shipments, assign a vehicle and a driver, and dispatch — in one step.",
+      "shipments": "Confirmed shipments",
+      "vehicle": "Vehicle",
+      "driver": "Driver",
+      "submit": "Dispatch",
+      "noneReady": "No confirmed shipments are waiting.",
+      "trips": "Trips",
+      "assignedTo": "Assigned to"
+    },
+    "fleet": {
+      "title": "Fleet",
+      "vehicles": "Vehicles",
+      "drivers": "Drivers",
+      "plate": "Plate",
+      "kind": "Type",
+      "assigned": "On trip",
+      "newVehicle": "Register vehicle",
+      "newDriver": "Add driver",
+      "fullName": "Full name",
+      "phone": "Phone (E.164)",
+      "license": "License number",
+      "licenseExpiry": "License expiry",
+      "employment": "Employment",
+      "linked": "Sign-in linked",
+      "consent": "Tracking consent",
+      "maintenance": "To maintenance",
+      "available": "Back in service",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "customers": {
+      "title": "Customers",
+      "new": "New customer",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone (E.164)"
+    },
+    "errors": {
+      "generic": "The action failed.",
+      "reference": "Reference: {id}"
+    }
   }
 }

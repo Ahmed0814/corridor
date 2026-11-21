@@ -5,7 +5,7 @@
 | 0 Discovery & architecture | **Done** (DoD evidence below) | 2026-11-20 |
 | 1 Foundation | **Done**: CI green incl. `docker compose up` + smoke tests (run 44924202637) | 2026-11-21 |
 | 2 Security & tenancy | **Done except real Cognito login** (needs a user pool; local issuer verified). CI green | 2026-11-21 |
-| 3 Core logistics | Not started | — |
+| 3 Core logistics | **Implemented and verified locally**; awaiting its CI run | 2026-11-21 |
 | 4 GPS tracking | Not started | — |
 | 5 Driver app & offline | Not started | — |
 | 6 Customer & operations | Not started | — |
@@ -232,6 +232,75 @@ PASS  driver cannot list the company's members  status=403 code=forbidden
 - **Real Cognito**: hosted UI, TOTP enrollment, phone verification and Cognito's token claims. Needs a user pool per environment (Needs credentials).
 - **Driver app on a device or emulator**: the sign-in was verified at the HTTP level only. The browser hand-off and secure storage need an Expo development build (Phase 5 device plan).
 - ~~First CI run of Phase 2~~: green (run 44924202637), including migrations as `corridor_migrator`, tests as `corridor_app`, and compose with the role bootstrap.
+
+---
+
+## Phase 3 — Core logistics
+
+### What was built
+- **Customers** (profiles, contacts, scoped access), **containers** (ISO 6346 number and check digit validated, availability, append-only movements/inspections), **fleet** (vehicles, trailers; "assigned" derived from the active assignment), **drivers** (license number encrypted at rest with a normalised keyed hash, PII only with `drivers.pii` or to the driver themselves, consent recording, link to the sign-in membership).
+- **Shipments** state machine: draft → confirmed → dispatched → in_transit ⇄ at_border (clearance only with `shipments.confirm_clearance`, hard rule 8) → delivered / delivery_failed → reattempt; cancel from draft/confirmed; delayed is a flag. Containers are reserved on confirm and released on delivery/cancel; one container on at most one active shipment (partial unique index).
+- **Trips** state machine: planned → assigned → in_progress ⇄ paused → completed / aborted; cancel from planned/assigned; only the assigned driver acts, or an office user with `trips.act_on_behalf` and a reason. Starting a trip moves its dispatched shipments to in_transit.
+- **Dispatch**: `POST /dispatch` creates a trip, assigns vehicle + driver and dispatches the shipments in one transaction (all or nothing).
+- **Corrections**: `/shipments/{id}/corrections` and `/trips/{id}/corrections` (owner/admin, reason required) append a `correction` event; history is never rewritten.
+- **Idempotency** (D-015): `Idempotency-Key` required on every mutation; replay is byte-identical, a reused key with a different body gets 422, concurrent duplicates run once.
+- **Transactional outbox** (D-014, D-051): business events written in the same transaction; relay on `corridor_relay` every 5 s.
+- **Cursor pagination** on every list (D-053). All new tables have forced RLS (checked automatically by the Phase 2 coverage test); event tables are append-only for the app role.
+- **Ops UI** (`/ops`): overview, shipments (list, filter, create, detail with status history and the allowed actions), dispatch, fleet (vehicles, drivers), customers, in English and French, via server actions (D-056).
+
+### Bugs found and fixed while verifying
+- Idempotent replay returned timestamps with microseconds while the original had milliseconds (Pydantic vs Ninja's encoder). Now stored exactly as Ninja renders.
+- The duplicate-license check treated "ET-123456" and "ET123456" as different licenses (D-054).
+- Ninja 1.8 deprecates `(201, body)` tuples. Endpoints now return `Status(201, body)`.
+- Six services imported `identity.permissions`, which the boundary contracts now forbid. Caught by import-linter; switched to the public `identity.schemas`.
+
+### Definition of Done — status
+| Criterion | Status | Evidence |
+|---|---|---|
+| Customers, containers, shipments, vehicles, drivers, trips and dispatch work end to end | Verified locally | API: `tests/test_logistics.py` (full lifecycle from creation to delivery and trip completion, the dispatch endpoint, scopes). UI: 12/12 page checks + 7/7 real form submissions over HTTP (below). |
+| All state machines enforce valid transitions | Verified | invalid/duplicate/premature transitions return 409 `invalid_transition` with the allowed sources; rules return specific codes (`no_assigned_trip`, `shipments_not_dispatched`, `vehicle_unavailable`, `assignment_conflict`, `container_unavailable`, `reason_required`). |
+| Lifecycle tests pass, including the concurrent dispatch race test | Verified | `tests/test_dispatch_race.py::test_concurrent_dispatch_race_has_exactly_one_winner`: two threads, committed data, barrier-synchronised; results `["assignment_conflict", "ok"]`, trips end `["assigned", "planned"]`. |
+
+### Verification (real output, 2026-11-21, local Postgres 16.16 + PostGIS 3.7, Redis)
+Backend:
+```
+$ uv run ruff check .                                      -> All checks passed!                           [exit 0]
+$ uv run ruff format --check .                             -> 197 files already formatted                  [exit 0]
+$ uv run mypy .  /  uv run mypy . --platform linux         -> Success: no issues found in 197 source files [exit 0]
+$ uv run lint-imports                                      -> Contracts: 17 kept, 0 broken.                [exit 0]
+$ uv run python manage.py makemigrations --check --dry-run -> No changes detected                          [exit 0]
+$ REQUIRE_SERVICES=1 uv run pytest -q                      -> 190 passed in 23.90s                         [exit 0]
+```
+(190 = 164 from Phases 1-2 + 23 in `test_logistics.py` + 3 in `test_dispatch_race.py`.)
+
+Web: `npm run lint` [exit 0] · `npm run typecheck` [exit 0] · `npm run test` -> 4 files, 36 tests passed [exit 0] · `npm run build` -> `/ops`, `/ops/shipments`, `/ops/shipments/[id]`, `/ops/dispatch`, `/ops/fleet`, `/ops/customers` [exit 0]
+
+UI end to end against the running API and web app (signed in through the web app's own OAuth flow; demo company `demo-e2e`):
+```
+PASS  web sign-in: callback sets the session  status=307
+PASS  seed: shipment dispatched through /dispatch
+PASS  page /ops · /ops/shipments · /ops/shipments/{id} · /ops/dispatch · /ops/fleet · /ops/customers · ?status=confirmed  (all 200, data present)
+PASS  detail: dispatched shipment offers only 'Mark delayed' (state machine)  ['Mark delayed']
+PASS  detail: confirmed shipment offers cancel + delay, no border clearance  ['Cancel shipment', 'Mark delayed']
+PASS  detail: unknown id is a 404 page
+12/12 UI checks passed
+PASS  form carries a server action id and an idempotency key
+PASS  form submit redirects back  303
+PASS  double submit of one form creates exactly one customer  count=1
+PASS  cancel via form succeeds
+PASS  shipment shows cancelled with the reason in its history
+PASS  a second cancel is refused by the state machine  ?error=invalid_transition&ref=…
+PASS  the refusal is shown on the page with a reference
+7/7 form checks passed
+```
+
+### Not in Phase 3 (by design)
+- Opening a GPS tracking session on trip start, geofence-based border arrival, ETA: Phase 4/6.
+- Delivery photo/signature/location evidence: Phase 6 (D-055).
+- Driver app trip screens: Phase 5.
+
+### Incident during this session
+- The local PostgreSQL stopped at 16:58: Windows could not start a new backend process (`0xC0000142`, DLL initialisation failed), which happens under memory/resource exhaustion. The machine had been reporting low memory. Postgres shut down cleanly and recovered with no data loss on restart. Not a code issue; local dev servers are now stopped when not in use.
 
 ---
 

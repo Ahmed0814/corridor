@@ -21,6 +21,7 @@ MEMBERSHIP_ACTIVATED = "membership.activated"
 MEMBERSHIP_SUSPENDED = "membership.suspended"
 MEMBERSHIP_REACTIVATED = "membership.reactivated"
 ROLE_CHANGED = "role.changed"
+MEMBERSHIP_PROFILE_LINKED = "membership.profile_linked"
 PLATFORM_READ = "platform.read"
 
 ActorKind = AuditLog.ActorKind

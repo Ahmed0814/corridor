@@ -13,4 +13,6 @@ regexes = [
   '''sqs://local:local@''',
   '''local-dev-only-insecure-key-not-for-deployment''',
   '''https://public@sentry\.invalid/1''',
+  '''bG9jYWwtZGV2LW9ubHktZmVybmV0LWtleS0wMDAwMDA=''',
+  '''dGVzdC1vbmx5LWZlcm5ldC1rZXktMDAwMDAwMDAwMDA=''',
 ]
