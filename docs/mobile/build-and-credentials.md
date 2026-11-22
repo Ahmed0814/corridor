@@ -40,3 +40,16 @@ Local development without EAS: `npx expo run:android` (needs the Android SDK on 
 
 - Android emulator → host machine API: `http://10.0.2.2:8000` (the development profile default).
 - Physical phone on the LAN: use the machine's LAN IP. Release builds require HTTPS (staging/production).
+
+## Test build for the AWS test environment (D-072)
+`eas.json` has a `test` profile pointing at the test server (`https://99-79-154-201.sslip.io`) and its
+Cognito driver client (a public PKCE client: the client id is not a secret). With an Expo account:
+
+```
+cd apps/driver-mobile
+npx eas login
+npx eas build --profile test --platform android     # internal APK, install on the test phone
+```
+Drivers sign in with an **email** address on this environment (SMS is not configured), after an owner
+or admin invited them on the Team page and linked them to their driver profile.
+

@@ -7,14 +7,30 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://10.0.2.2:8000"
       }
     },
+    "test": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://99-79-154-201.sslip.io",
+        "EXPO_PUBLIC_AUTH_CLIENT_ID": "3n8gitbb8a5ctmuf8rdig9ccmf",
+        "EXPO_PUBLIC_AUTH_AUTHORIZE_URL": "https://corridor-test-0438.auth.ca-central-1.amazoncognito.com/oauth2/authorize",
+        "EXPO_PUBLIC_AUTH_TOKEN_URL": "https://corridor-test-0438.auth.ca-central-1.amazoncognito.com/oauth2/token"
+      }
+    },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://api.staging.example.invalid",
         "EXPO_PUBLIC_AUTH_CLIENT_ID": "SET-IN-EAS-ENVIRONMENT",
@@ -24,7 +40,9 @@
     },
     "production": {
       "autoIncrement": true,
-      "android": { "buildType": "app-bundle" },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://api.example.invalid",
         "EXPO_PUBLIC_AUTH_CLIENT_ID": "SET-IN-EAS-ENVIRONMENT",

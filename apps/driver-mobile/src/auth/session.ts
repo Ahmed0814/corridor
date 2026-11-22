@@ -83,7 +83,7 @@ export function errorCode(body: unknown): string | null {
 export function describeError(code: string | null): string {
   switch (code) {
     case 'no_membership':
-      return 'This phone number is not registered as a driver yet. Ask your company to invite you.';
+      return 'This account is not registered as a driver yet. Ask your company to invite you.';
     case 'membership_suspended':
       return 'Your access is suspended. Contact your dispatcher.';
     case 'tenant_suspended':

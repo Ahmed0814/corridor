@@ -112,7 +112,7 @@ export default function App() {
             onPress={signIn}
             style={({ pressed }) => [styles.button, (!request || pressed) && styles.buttonDim]}
           >
-            <Text style={styles.buttonText}>Sign in with your phone number</Text>
+            <Text style={styles.buttonText}>Sign in</Text>
           </Pressable>
         </>
       )}
