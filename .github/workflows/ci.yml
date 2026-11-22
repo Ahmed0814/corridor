@@ -166,26 +166,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      TF_VERSION: 1.17.2
+      # Official HashiCorp image, same version as local development (docs/deployment/test-environment.md).
+      TF: docker run --rm -v ${{ github.workspace }}:/repo -w /repo hashicorp/terraform:1.17.2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install Terraform (checksum-verified)
-        run: |
-          set -euo pipefail
-          cd /tmp
-          base="https://releases.hashicorp.com/terraform/${TF_VERSION}"
-          curl -fsSLO "${base}/terraform_${TF_VERSION}_linux_amd64.zip"
-          curl -fsSLO "${base}/terraform_${TF_VERSION}_SHA256SUMS"
-          grep "linux_amd64.zip" "terraform_${TF_VERSION}_SHA256SUMS" | sha256sum -c -
-          unzip -q "terraform_${TF_VERSION}_linux_amd64.zip" -d "$HOME/.local/bin"
       - name: fmt
-        run: terraform -chdir=infrastructure/terraform fmt -check -recursive -diff
+        run: $TF -chdir=infrastructure/terraform fmt -check -recursive -diff
       - name: validate (no credentials, no backend)
         run: |
           set -euo pipefail
           for env in bootstrap test; do
-            terraform -chdir="infrastructure/terraform/environments/$env" init -backend=false -input=false
-            terraform -chdir="infrastructure/terraform/environments/$env" validate
+            $TF -chdir="infrastructure/terraform/environments/$env" init -backend=false -input=false
+            $TF -chdir="infrastructure/terraform/environments/$env" validate
           done
 
   compose:
