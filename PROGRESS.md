@@ -9,7 +9,7 @@
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
 | 5 Driver app & offline | **Code done, CI green on `d3e15b3` (run 44962750043). Emulator runs and human device sign-off pending** | 2026-11-21 |
 | 6 Customer & operations | **In progress**: backend CI green on `9811e0f` (run 45003627368); web screens done locally; driver-app delivery capture next | 2026-11-22 |
-| 7 Infrastructure & deployment | Not started | — |
+| 7 Infrastructure & deployment | **In progress**: test environment (single host, ca-central-1, ~$19/month) written and validated locally; **nothing applied** | 2026-11-22 |
 | 8 Final verification | Not started | — |
 
 ---
@@ -494,6 +494,28 @@ $ npx expo-doctor       20/20 checks passed. No issues detected!
 
 ### Remaining for Phase 6
 - Signed-in browser walkthrough of the ops and portal screens (needs a local sign-in session; HTTP-level checks only so far).
+
+---
+
+## Phase 7 — Infrastructure (in progress)
+
+### Test environment (D-072), written 2026-11-22, not applied
+- `infrastructure/terraform/environments/bootstrap` (state bucket), `environments/test`, modules `single_host` and `cognito`. Runbook and cost table: `docs/deployment/test-environment.md`.
+- `.github/workflows/publish-images.yml` builds linux/arm64 images after CI passes on main; CI gains a `terraform` job (fmt, validate).
+
+```
+$ terraform fmt -check -recursive          fmt ok
+$ terraform validate (bootstrap, test)     Success! The configuration is valid. (both)
+templates rendered with dummy values: compose YAML parses (10 services, migrate depends only on db),
+  user_data passes bash -n, 6216 bytes gzipped (limit 16 KB)
+Django boots with the test-environment settings: env staging | debug False | issuer mode cognito |
+  docs local | email sending False | secure cookies True
+```
+
+### Waiting for
+- AWS account id and an alert email; GHCR packages set to public after the first image build.
+- **Approval** of the bootstrap plan, then of the test plan (no `terraform apply` without it).
+- After apply: smoke test, then one backup/restore drill (Phase 7 Done-when).
 
 ---
 

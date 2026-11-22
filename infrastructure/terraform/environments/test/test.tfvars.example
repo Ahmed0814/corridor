@@ -1,0 +1,8 @@
+# Copy to test.tfvars (git-ignored) and fill in. No secrets here: passwords and keys are generated
+# by Terraform and stored in SSM Parameter Store.
+account_id    = "123456789012"
+alert_email   = "you@example.com"
+instance_type = "t4g.small"
+domain_name   = "" # empty = <elastic-ip>.sslip.io
+backend_image = "ghcr.io/ahmed0814/corridor-backend@sha256:<digest from the publish-images workflow>"
+web_image     = "ghcr.io/ahmed0814/corridor-web@sha256:<digest from the publish-images workflow>"

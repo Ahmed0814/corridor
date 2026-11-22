@@ -7,7 +7,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 |---|---|---|
 | D-001 | Modular monolith | Fixed |
 | D-002 | One backend image, four process types | Decided |
-| D-003 | AWS region and data residency | **Needs confirmation** |
+| D-003 | AWS region and data residency | Test env: ca-central-1 (owner, 2026-11-22). Production: **needs confirmation** |
 | D-004 | Python 3.12 in containers | Decided |
 | D-005 | Module boundary enforcement | Decided |
 | D-006 | Cognito layout, MFA enforcement, local test issuer | Decided (driver SMS OTP needs credentials) |
@@ -76,6 +76,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-069 | Notifications as outbox handlers; real email only with EMAIL_SENDING_ENABLED | Decided |
 | D-070 | Documents validated by content; local storage adapter until S3 | Decided |
 | D-071 | Delivery requires photo + signature of the same shipment | Decided |
+| D-072 | Test environment on AWS under $20/month (single small server) | Decided by owner (budget); region needs confirmation |
 
 ---
 
@@ -87,6 +88,8 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-003 AWS region and data residency — NEEDS CONFIRMATION
 **Context:** The brief proposes `me-central-1` (UAE) and asks to confirm data residency for Djibouti and Ethiopia. Both countries have data-protection legislation that may restrict cross-border transfer of personal data (driver identities, phone numbers, GPS traces). I have not verified the current legal requirements and must not guess. **Choice:** Design with `me-central-1` as the working assumption. Keep the region a single Terraform variable. Before Phase 7, verify that every needed service is available there, including Cognito user pools, RDS PostgreSQL 16 with PostGIS, ElastiCache, SES (email may need a different region), ACM for CloudFront (always `us-east-1`) and WAF. **Needs:** Legal confirmation from counsel in both jurisdictions before any real customer data is loaded. The fallback, if in-country hosting is mandated, would be a different hosting model and would invalidate parts of D-023/Phase 7. **Trade-off:** Phases 1–6 are region-independent, so the work proceeds.
+
+**Update 2026-11-22 (owner):** the test environment (D-072) runs in **ca-central-1**. It holds seed data only. The production region and residency still need legal confirmation before any real customer data is loaded.
 
 ## D-004 Python 3.12 in containers
 **Context:** The brief fixes Python 3.12. The workstation has Python 3.13.15 and no 3.12. **Choice:** Containers and CI use `python:3.12-slim` (pinned digest). Local tooling may run on 3.13, but test evidence for Phase DoD comes from the 3.12 container or CI. **Trade-off:** Local-only runs can differ slightly. CI is authoritative.
@@ -170,7 +173,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 **Context:** The brief fixes MapLibre + OpenStreetMap data. The public `tile.openstreetmap.org` servers must not be used for production apps (OSMF tile usage policy). **Choice:** A Protomaps PMTiles extract covering Djibouti and Ethiopia, stored in S3 and served through CloudFront. No API key, no per-request vendor fee, and attribution displayed. Dev uses the same file served locally. **Trade-off:** We rebuild the extract periodically. A commercial tile provider stays a fallback behind the same style URL (a "Needs credentials" item if chosen).
 
 ## D-029 Bracketed pilot targets adopted as defaults — NEEDS CONFIRMATION
-**Choice:** The bracketed values in the brief (3 tenants, 300 trucks, 400 drivers, 2,000 shipments per month, 100 office users, p95 < 300 ms, 10 s map latency, RPO 24 h / RTO 4 h, freshness thresholds 2/10/60 min, GPS retention 12 months) are adopted as working defaults. Freshness thresholds are tenant settings. **Missing:** the pilot AWS budget ("under $X/month") is not filled in. The Phase 7 cost estimate will be checked against it, and a budget is needed before `terraform apply`.
+**Choice:** The bracketed values in the brief (3 tenants, 300 trucks, 400 drivers, 2,000 shipments per month, 100 office users, p95 < 300 ms, 10 s map latency, RPO 24 h / RTO 4 h, freshness thresholds 2/10/60 min, GPS retention 12 months) are adopted as working defaults. Freshness thresholds are tenant settings. **Budget (2026-11-22, owner):** the first AWS environment is a **test** environment under **$20/month** (D-072). The production pilot budget is still open and is needed before a production `terraform apply`.
 
 ## D-030 Repository root and git
 **Context:** The brief's tree is rooted at `corridor-platform/`. The working directory is `D:\corridor`, and the enclosing drive root `D:\` contains an unrelated git repository owned by a different user (git reported "dubious ownership"). **Choice:** `D:\corridor` is the repository root, with its own `git init -b main`, so the platform is isolated from the drive-level repo. The directory name differs from the brief's tree. Nothing else changes. **Trade-off:** None.
@@ -297,4 +300,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-071 Proof of delivery
 **Choice:** `deliver` requires at least one delivery photo and a signature already uploaded for the same shipment, checked by kind. On success they become customer-visible and their ids are written into the `delivered` event. **Trade-off:** the driver app must upload before confirming (Phase 6 mobile work).
+
+## D-072 Test environment on AWS under $20/month
+**Context:** the owner set a budget of under $20/month for a first AWS environment, for testing. The production design (ECS Fargate, RDS Multi-AZ, ElastiCache, ALB, NAT/endpoints, WAF; `docs/deployment/deployment.md`) costs roughly $370–520/month and cannot fit. **Choice:** a separate `test` environment that runs the same container images on **one small EC2 instance** (Graviton `t4g.small`, 2 vCPU / 2 GB, plus swap) with Docker Compose: PostGIS, Redis, ElasticMQ, API, realtime, worker, beat, web, and Caddy for HTTPS (Let's Encrypt). No ALB, no NAT, no RDS, no ElastiCache, no WAF. A 20 GB encrypted gp3 volume, daily EBS snapshots kept 7 days, a public IPv4 address, SSM Session Manager instead of SSH (no open port 22), and an AWS Budgets alert at $15 and $20. Region **ca-central-1** (owner): estimated ~$19.40/month (instance ~$13.40, volume ~$1.80, public IPv4 ~$3.65, snapshots ~$0.50). PostGIS's official image has no arm64 build, so the host builds `postgres:16-bookworm` + PGDG `postgresql-16-postgis-3`. Images are built for linux/arm64 by the `publish-images` workflow (native arm64 runner) and pulled from ghcr.io by digest. **Rules that still apply:** Terraform plan reviewed and approved before any apply; seed data only, clearly labelled, **no real customer data** on this environment; sign-in through a real Cognito user pool (free at test volume), since the local issuer is refused outside development (D-042); email stays suppressed. **Trade-offs:** single server, no high availability, RPO 24 h from snapshots, tight memory (2 GB) so it suits a handful of testers, not load tests. Production keeps the documented design; Phase 8 load tests need a larger, short-lived environment.
 

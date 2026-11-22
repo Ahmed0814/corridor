@@ -1,0 +1,23 @@
+{
+	email ${acme_email}
+}
+
+${hostname} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Realtime (WebSocket) and API go to the backend; everything else to the web app.
+	@realtime path /ws/*
+	reverse_proxy @realtime realtime:8001
+
+	@api path /api/* /healthz/* /static/*
+	reverse_proxy @api api:8000
+
+	reverse_proxy web:3000
+}

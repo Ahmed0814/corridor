@@ -1,0 +1,29 @@
+include classpath("application.conf")
+
+node-address {
+  protocol = http
+  host = elasticmq
+  port = 9324
+  context-path = ""
+}
+
+rest-sqs {
+  enabled = true
+  bind-port = 9324
+  bind-hostname = "0.0.0.0"
+  sqs-limits = strict
+}
+
+queues {
+  ${prefix}default {
+    defaultVisibilityTimeout = 900 seconds
+    receiveMessageWait = 10 seconds
+    deadLettersQueue { name = "${prefix}dlq", maxReceiveCount = 5 }
+  }
+  ${prefix}events {
+    defaultVisibilityTimeout = 900 seconds
+    receiveMessageWait = 10 seconds
+    deadLettersQueue { name = "${prefix}dlq", maxReceiveCount = 5 }
+  }
+  ${prefix}dlq { }
+}

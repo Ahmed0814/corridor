@@ -1,0 +1,58 @@
+# Builds the linux/arm64 images for the single-host test environment (DECISIONS D-072) and
+# publishes them to GitHub Container Registry. Runs only after CI passed on main (or by hand).
+# Plain docker CLI on a native arm64 runner: no third-party actions, no emulation.
+name: publish-images
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-images
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+          persist-credentials: false
+
+      - name: Log in to ghcr.io
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push (linux/arm64)
+        run: |
+          set -euo pipefail
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          backend="ghcr.io/${owner}/corridor-backend"
+          web="ghcr.io/${owner}/corridor-web"
+          docker build --platform linux/arm64 --build-arg RELEASE="$SHA" \
+            -f docker/backend.Dockerfile -t "$backend:$SHA" -t "$backend:main" .
+          docker build --platform linux/arm64 -t "$web:$SHA" -t "$web:main" apps/web
+          for image in "$backend" "$web"; do
+            docker push "$image:$SHA"
+            docker push "$image:main"
+          done
+          {
+            echo "### Images for the test environment (pin these digests in test.tfvars)"
+            echo '```'
+            echo "backend_image = \"$(docker inspect --format '{{index .RepoDigests 0}}' "$backend:$SHA")\""
+            echo "web_image     = \"$(docker inspect --format '{{index .RepoDigests 0}}' "$web:$SHA")\""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
