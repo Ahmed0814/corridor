@@ -66,6 +66,10 @@ class CustomerDetail(CustomerOut):
     contacts: list[ContactOut]
 
 
+class PortalUserLinkIn(_In):
+    membership_id: uuid.UUID
+
+
 class CustomerPage(Schema):
     items: list[CustomerOut]
     next_cursor: str | None

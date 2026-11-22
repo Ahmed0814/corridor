@@ -75,6 +75,8 @@ class MemberOut(Schema):
     status: str
     created_at: datetime
     activated_at: datetime | None
+    driver_id: uuid.UUID | None = None  # linked driver profile (driver role)
+    customer_id: uuid.UUID | None = None  # linked customer company (customer role)
 
 
 class InviteIn(Schema):

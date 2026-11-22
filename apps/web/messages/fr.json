@@ -68,7 +68,8 @@
       "map": "Carte en direct",
       "geofences": "Géorepérages",
       "notifications": "Notifications",
-      "containers": "Conteneurs"
+      "containers": "Conteneurs",
+      "team": "Équipe"
     },
     "common": {
       "create": "Créer",
@@ -110,7 +111,10 @@
       "available": "Disponible",
       "in_use": "En service",
       "maintenance": "Maintenance",
-      "retired": "Retiré"
+      "retired": "Retiré",
+      "member_invited": "Invité",
+      "member_active": "Actif",
+      "member_suspended": "Suspendu"
     },
     "shipments": {
       "title": "Expéditions",
@@ -318,6 +322,40 @@
         "good": "Bon",
         "damaged": "Endommagé",
         "needs_repair": "À réparer"
+      }
+    },
+    "team": {
+      "title": "Équipe",
+      "description": "Les personnes qui peuvent se connecter à cette entreprise, leurs rôles, et le profil chauffeur ou l’entreprise cliente de chaque compte chauffeur et client.",
+      "noAccess": "Seuls les propriétaires et les administrateurs gèrent l’équipe.",
+      "member": "Membre",
+      "role": "Rôle",
+      "linkedTo": "Lié à",
+      "actions": "Actions",
+      "you": "vous",
+      "since": "depuis le {at}",
+      "driverProfile": "Profil chauffeur",
+      "customerCompany": "Client",
+      "link": "Lier",
+      "needsDriverProfile": "Créez d’abord un profil chauffeur dans Flotte, puis liez-le ici.",
+      "needsCustomer": "Créez d’abord le client, puis liez-le ici.",
+      "suspend": "Suspendre",
+      "reactivate": "Réactiver",
+      "invite": "Inviter une personne",
+      "email": "E-mail",
+      "name": "Nom",
+      "sendInvite": "Envoyer l’invitation",
+      "inviteNote": "Un vrai e-mail avec un mot de passe temporaire est envoyé (par Cognito). N’invitez que des adresses appartenant à la personne. Les chauffeurs et les clients doivent ensuite être liés à leur profil chauffeur ou à leur entreprise cliente dans le tableau ci-dessus.",
+      "invited": "Invitation envoyée. La personne se connecte avec le mot de passe temporaire reçu par e-mail.",
+      "roles": {
+        "owner": "Propriétaire",
+        "admin": "Administrateur",
+        "ops_manager": "Responsable des opérations",
+        "dispatcher": "Répartiteur",
+        "fleet_manager": "Responsable de flotte",
+        "finance": "Finance",
+        "driver": "Chauffeur",
+        "customer": "Client (portail)"
       }
     }
   },

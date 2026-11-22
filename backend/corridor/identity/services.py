@@ -130,6 +130,8 @@ def _member_out(m: TenantMembership, user: User) -> MemberOut:
         status=m.status,
         created_at=m.created_at,
         activated_at=m.activated_at,
+        driver_id=m.driver_id,
+        customer_id=m.customer_id,
     )
 
 

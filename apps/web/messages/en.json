@@ -68,7 +68,8 @@
       "map": "Live map",
       "geofences": "Geofences",
       "notifications": "Notifications",
-      "containers": "Containers"
+      "containers": "Containers",
+      "team": "Team"
     },
     "common": {
       "create": "Create",
@@ -110,7 +111,10 @@
       "available": "Available",
       "in_use": "In use",
       "maintenance": "Maintenance",
-      "retired": "Retired"
+      "retired": "Retired",
+      "member_invited": "Invited",
+      "member_active": "Active",
+      "member_suspended": "Suspended"
     },
     "shipments": {
       "title": "Shipments",
@@ -318,6 +322,40 @@
         "good": "Good",
         "damaged": "Damaged",
         "needs_repair": "Needs repair"
+      }
+    },
+    "team": {
+      "title": "Team",
+      "description": "People who can sign in to this company, their roles, and the driver profile or customer company each driver and customer account belongs to.",
+      "noAccess": "Only owners and admins can manage the team.",
+      "member": "Member",
+      "role": "Role",
+      "linkedTo": "Linked to",
+      "actions": "Actions",
+      "you": "you",
+      "since": "since {at}",
+      "driverProfile": "Driver profile",
+      "customerCompany": "Customer",
+      "link": "Link",
+      "needsDriverProfile": "Create a driver profile under Fleet first, then link it here.",
+      "needsCustomer": "Create the customer first, then link it here.",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "invite": "Invite someone",
+      "email": "Email",
+      "name": "Name",
+      "sendInvite": "Send invitation",
+      "inviteNote": "This sends a real email with a temporary password (from Cognito). Invite only addresses that belong to the person. Drivers and customers must then be linked to their driver profile or customer company in the table above.",
+      "invited": "Invitation sent. The person signs in with the temporary password from the email.",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "ops_manager": "Operations manager",
+        "dispatcher": "Dispatcher",
+        "fleet_manager": "Fleet manager",
+        "finance": "Finance",
+        "driver": "Driver",
+        "customer": "Customer (portal)"
       }
     }
   },

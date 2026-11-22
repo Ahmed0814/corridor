@@ -93,3 +93,17 @@ def names(customer_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
 def email_of(customer_id: uuid.UUID) -> str | None:
     email = Customer.objects.filter(id=customer_id).values_list("email", flat=True).first()
     return email or None
+
+
+def link_portal_user(ctx: RequestContext, customer_id: uuid.UUID, membership_id: uuid.UUID) -> CustomerDetail:
+    """Give a customer-role member access to this customer's shipments in the portal (D-016).
+    Only tenant staff can do this; the membership must be a customer membership of this company."""
+    from corridor.identity import services as identity
+
+    if ctx.scope != Scope.TENANT:
+        raise not_found()
+    c = _visible(ctx).select_for_update().filter(id=customer_id).first()
+    if c is None:
+        raise not_found()
+    identity.attach_customer_profile(membership_id, c.id)
+    return _detail(c)

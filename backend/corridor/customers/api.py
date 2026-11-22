@@ -9,7 +9,14 @@ from ninja import Router, Status
 
 from corridor.core.idempotency import idempotent
 from corridor.customers import services
-from corridor.customers.schemas import ContactIn, CustomerDetail, CustomerIn, CustomerPage, CustomerUpdateIn
+from corridor.customers.schemas import (
+    ContactIn,
+    CustomerDetail,
+    CustomerIn,
+    CustomerPage,
+    CustomerUpdateIn,
+    PortalUserLinkIn,
+)
 from corridor.identity.services import ctx_of, requires, tenant_auth
 
 router = Router(tags=["customers"], auth=tenant_auth)
@@ -50,3 +57,16 @@ def update_customer(
 @idempotent
 def add_contact(request: HttpRequest, customer_id: uuid.UUID, payload: ContactIn) -> Status[CustomerDetail]:
     return Status(201, services.add_contact(ctx_of(request), customer_id, payload))
+
+
+@router.post(
+    "/customers/{customer_id}/portal-users",
+    response=CustomerDetail,
+    summary="Give a customer-role member portal access to this customer",
+)
+@requires("users.manage")
+@idempotent
+def link_portal_user(
+    request: HttpRequest, customer_id: uuid.UUID, payload: PortalUserLinkIn
+) -> CustomerDetail:
+    return services.link_portal_user(ctx_of(request), customer_id, payload.membership_id)
