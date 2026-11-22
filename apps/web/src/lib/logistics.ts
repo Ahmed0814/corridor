@@ -25,6 +25,9 @@ export type Shipment = {
   origin_label: string;
   destination_label: string;
   eta: string | null;
+  eta_method?: string;
+  eta_remaining_km?: number | null;
+  eta_basis_recorded_at?: string | null;
   delivered_at: string | null;
   recipient_name: string;
   containers: { id: string; number: string }[];

@@ -4,8 +4,11 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { type Me, apiGet } from "@/lib/api";
 import { ACTION_FIELDS, type LifecycleEvent, type Shipment, shipmentActions } from "@/lib/logistics";
+import { type DocumentInfo, etaView, type TrackingLink } from "@/lib/phase6";
 
 import { shipmentAction } from "../../actions";
+import { revokeTrackingLink } from "../../phase6-actions";
+import { CreateLinkForm, DeliverForm } from "../../_components/phase6-client";
 import {
   ActionError,
   buttonClass,
@@ -22,17 +25,24 @@ export default async function ShipmentDetail({ params, searchParams }: PageProps
   const sp = await searchParams;
   const t = await getTranslations("Ops");
   const locale = await getLocale();
-  const [me, shipment, events] = await Promise.all([
+  const sid = encodeURIComponent(id);
+  const [me, shipment, events, links, documents] = await Promise.all([
     apiGet<Me>("/me"),
-    apiGet<Shipment>(`/shipments/${encodeURIComponent(id)}`),
-    apiGet<LifecycleEvent[]>(`/shipments/${encodeURIComponent(id)}/events`),
+    apiGet<Shipment>(`/shipments/${sid}`),
+    apiGet<LifecycleEvent[]>(`/shipments/${sid}/events`),
+    apiGet<TrackingLink[]>(`/shipments/${sid}/tracking-links`),
+    apiGet<DocumentInfo[]>(`/shipments/${sid}/documents`),
   ]);
   if (!shipment.ok) {
     if (shipment.status === 404 || shipment.status === 422) notFound();
     return <ActionError code={shipment.error.code} requestId={shipment.error.requestId ?? undefined} />;
   }
   const s = shipment.data;
-  const actions = shipmentActions(s.status, me.ok ? me.data.permissions : []);
+  const permissions = me.ok ? me.data.permissions : [];
+  const actions = shipmentActions(s.status, permissions);
+  const eta = etaView(s);
+  const canLink = permissions.includes("tracking_links.create");
+  const canRevoke = permissions.includes("tracking_links.revoke");
 
   return (
     <section>
@@ -76,6 +86,26 @@ export default async function ShipmentDetail({ params, searchParams }: PageProps
           <dt className="text-muted-foreground">{t("shipments.cargo")}</dt>
           <dd>{s.cargo_description || "—"}</dd>
         </div>
+        <div className="sm:col-span-2">
+          <dt className="text-muted-foreground">{t("eta.title")}</dt>
+          <dd>
+            {eta.kind === "estimate" ? (
+              <>
+                {formatDate(eta.eta, locale)}
+                <span className="ms-2 text-xs text-muted-foreground">
+                  {t("eta.basis", {
+                    km: eta.remainingKm ?? "—",
+                    at: formatDate(eta.basisRecordedAt, locale),
+                  })}
+                </span>
+              </>
+            ) : eta.kind === "no_destination" ? (
+              <span className="text-muted-foreground">{t("eta.noDestination")}</span>
+            ) : (
+              <span className="text-muted-foreground">{t("eta.none")}</span>
+            )}
+          </dd>
+        </div>
         {s.status === "delivered" ? (
           <div>
             <dt className="text-muted-foreground">{t("shipments.recipient")}</dt>
@@ -90,6 +120,9 @@ export default async function ShipmentDetail({ params, searchParams }: PageProps
         <div className="mt-6 flex flex-wrap items-start gap-3">
           {actions.map((action) => {
             const field = ACTION_FIELDS[action];
+            if (action === "deliver") {
+              return <DeliverForm key={action} shipmentId={s.id} idempotencyKey={crypto.randomUUID()} />;
+            }
             return (
               <form key={action} action={shipmentAction} className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
                 <IdempotencyField />
@@ -113,6 +146,56 @@ export default async function ShipmentDetail({ params, searchParams }: PageProps
               </form>
             );
           })}
+        </div>
+      ) : null}
+
+      <h2 className="mt-8 text-base font-semibold">{t("documents.title")}</h2>
+      {documents.ok && documents.data.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-sm">
+          {documents.data.map((d) => (
+            <li key={d.id}>
+              <a href={`/ops/documents/${d.id}`} className="underline-offset-4 hover:underline" target="_blank" rel="noreferrer">
+                {t(`documents.kind.${d.kind}`)}
+              </a>
+              <span className="ms-2 text-xs text-muted-foreground">
+                {Math.ceil(d.size_bytes / 1024)} KB · {t(`documents.visibility.${d.visibility}`)} · {formatDate(d.created_at, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">{t("common.none")}</p>
+      )}
+
+      <h2 className="mt-8 text-base font-semibold">{t("links.title")}</h2>
+      <p className="mt-1 text-xs text-muted-foreground">{t("links.description")}</p>
+      {links.ok && links.data.length > 0 ? (
+        <ul className="mt-2 space-y-2 text-sm">
+          {links.data.map((l) => (
+            <li key={l.id} className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{l.label || t("links.unnamed")}</span>
+              <StatusBadge status={`link_${l.state}`} />
+              <span className="text-xs text-muted-foreground">
+                {t("links.expiresAt", { at: formatDate(l.expires_at, locale) })} · {l.allowed_fields.join(", ")}
+              </span>
+              {l.state === "active" && canRevoke ? (
+                <form action={revokeTrackingLink} className="flex items-center gap-1">
+                  <IdempotencyField />
+                  <input type="hidden" name="shipment_id" value={s.id} />
+                  <input type="hidden" name="link_id" value={l.id} />
+                  <input name="reason" required placeholder={t("common.reason")} className={`${inputClass} h-8 w-40`} />
+                  <button type="submit" className={subtleButtonClass}>
+                    {t("links.revoke")}
+                  </button>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {canLink && s.status !== "cancelled" ? (
+        <div className="mt-3">
+          <CreateLinkForm shipmentId={s.id} idempotencyKey={crypto.randomUUID()} />
         </div>
       ) : null}
 

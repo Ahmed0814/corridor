@@ -8,7 +8,7 @@
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
 | 5 Driver app & offline | **Code done, CI green on `d3e15b3` (run 44962750043). Emulator runs and human device sign-off pending** | 2026-11-21 |
-| 6 Customer & operations | **In progress**: backend done and tested locally (231 tests); web and driver-app screens next | 2026-11-22 |
+| 6 Customer & operations | **In progress**: backend CI green on `9811e0f` (run 45003627368); web screens done locally; driver-app delivery capture next | 2026-11-22 |
 | 7 Infrastructure & deployment | Not started | — |
 | 8 Final verification | Not started | — |
 
@@ -465,9 +465,26 @@ makemigrations --check: No changes detected | permission matrix: ok | pip-audit:
 ```
 Live (uvicorn on :8000): `/api/v1/meta` 200; unknown `/api/v1/public/tracking/<token>` 404; `/api/v1/geofences` and `/api/v1/notifications` 401 without a token; all new routes present in the OpenAPI schema.
 
+CI: run 45003627368 on `9811e0f`, all jobs green.
+
+### Web (done locally, 2026-11-22)
+- `/track/[token]`: public page, `noindex`, `no-referrer`, only allowed fields, coarse position with recorded and received times.
+- `/portal` and `/portal/shipments/[id]`: the customer's own shipments, ETA with its basis, customer-facing milestones only, proof of delivery downloads.
+- `/ops/shipments/[id]`: ETA with basis (or "no destination"), delivery form with photo and signature pad, documents, tracking links (created link shown once, revoke with reason).
+- `/ops/geofences` (circle geofences, verify, checkpoints) and `/ops/notifications` (inbox, mark read).
+- Document downloads streamed through `/ops/documents/[id]` and `/portal/documents/[id]` (API decides access).
+
+```
+$ npm run lint        (no findings)
+$ npm run typecheck   ✓ Types generated successfully (tsc: no errors)
+$ npx vitest run      Test Files 6 passed (6) · Tests 50 passed (50)
+$ npm run build       all 25 routes built, incl. /track/[token], /portal/shipments/[id], /ops/geofences, /ops/notifications
+```
+Live (uvicorn :8000 + `next start` :3000, TEST demo tenant `livecheck`): `/track/<token>` 200 showing reference, status, route and milestones with `referrer=no-referrer` and `robots=noindex, nofollow`; unknown token 404; after revoking the link the same page 404; `/ops/geofences`, `/portal` and `/ops/documents/<id>` without a session redirect (307) to sign-in.
+
 ### Remaining for Phase 6
-- Web: customer portal, public tracking page, notifications inbox, geofence management, tracking links and delivery evidence on the shipment page.
 - Driver app: delivery photo and signature capture before confirming.
+- Signed-in browser walkthrough of the ops and portal screens (needs a local sign-in session; HTTP-level checks only so far).
 
 ---
 

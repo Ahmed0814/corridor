@@ -31,6 +31,8 @@ const NAV = [
   { href: "/ops/map", key: "map" },
   { href: "/ops/fleet", key: "fleet" },
   { href: "/ops/customers", key: "customers" },
+  { href: "/ops/geofences", key: "geofences" },
+  { href: "/ops/notifications", key: "notifications" },
 ] as const;
 
 export async function OpsNav({ current }: { current: (typeof NAV)[number]["key"] }) {

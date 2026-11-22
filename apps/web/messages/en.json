@@ -65,7 +65,9 @@
       "dispatch": "Dispatch",
       "fleet": "Fleet",
       "customers": "Customers",
-      "map": "Live map"
+      "map": "Live map",
+      "geofences": "Geofences",
+      "notifications": "Notifications"
     },
     "common": {
       "create": "Create",
@@ -100,7 +102,10 @@
       "in_progress": "In progress",
       "paused": "Paused",
       "completed": "Completed",
-      "aborted": "Aborted"
+      "aborted": "Aborted",
+      "link_active": "Active",
+      "link_expired": "Expired",
+      "link_revoked": "Revoked"
     },
     "shipments": {
       "title": "Shipments",
@@ -194,6 +199,169 @@
       "feedStale": "Live updates are not arriving. The map shows the last data received at {time}; positions keep ageing.",
       "updated": "Updated {time}",
       "basemap": "Base map: development tiles. Production uses self-hosted tiles."
+    },
+    "eta": {
+      "title": "Estimated arrival",
+      "basis": "{km} km left · based on the position recorded {at}",
+      "noDestination": "No ETA: the shipment has no destination point.",
+      "none": "No ETA yet (no trusted GPS position)."
+    },
+    "delivery": {
+      "title": "Confirm delivery",
+      "recipient": "Recipient name",
+      "photo": "Delivery photo",
+      "signature": "Recipient signature",
+      "clear": "Clear signature",
+      "confirm": "Confirm delivery",
+      "note": "The photo and signature become visible to the customer once the delivery is confirmed."
+    },
+    "documents": {
+      "title": "Documents",
+      "kind": {
+        "delivery_photo": "Delivery photo",
+        "delivery_signature": "Recipient signature",
+        "paperwork": "Paperwork"
+      },
+      "visibility": {
+        "internal": "internal",
+        "customer": "visible to customer"
+      }
+    },
+    "links": {
+      "title": "Public tracking links",
+      "description": "Anyone with a link sees only the fields you allow, with an approximate position (±1 km). Links expire and can be revoked.",
+      "unnamed": "Unnamed link",
+      "expiresAt": "expires {at}",
+      "revoke": "Revoke",
+      "label": "Label",
+      "labelHint": "e.g. Consignee",
+      "expires": "Valid for (days, max 90)",
+      "fields": "Visible to the recipient",
+      "create": "Create link",
+      "created": "Link created. Copy it now:",
+      "copy": "Copy",
+      "copied": "Copied",
+      "onlyOnce": "For security, the link is shown only once. Revoke it and create a new one if it is lost.",
+      "error": "Could not create the link:",
+      "field": {
+        "status": "Status",
+        "eta": "ETA",
+        "route": "Route",
+        "timeline": "Milestones",
+        "position": "Approximate position",
+        "delivery": "Delivery time"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "No notifications.",
+      "markRead": "Mark as read",
+      "markAll": "Mark all as read"
+    },
+    "geofences": {
+      "title": "Geofences and checkpoints",
+      "description": "Areas used to detect checkpoint visits from GPS. A geofence starts unverified; only a verified border geofence can move a shipment to “at border”. Clearance is always confirmed by a person.",
+      "name": "Name",
+      "kind": "Type",
+      "verified": "Verified",
+      "active": "Active",
+      "yes": "Yes",
+      "no": "No",
+      "unverified": "Unverified",
+      "verify": "Verify",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "empty": "No geofences yet.",
+      "verifyNote": "Verify only after checking the outline matches the real place.",
+      "checkpoints": "Checkpoints (watched on every trip)",
+      "border": "Border",
+      "inactive": "inactive",
+      "stopWatching": "Stop watching",
+      "new": "New geofence (circle)",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "radius": "Radius (m)",
+      "source": "Source of the outline",
+      "sourceHint": "Where the position came from (survey, map, site visit).",
+      "create": "Create geofence",
+      "newCheckpoint": "Watch a geofence as a checkpoint",
+      "geofence": "Geofence",
+      "isBorder": "Border crossing",
+      "borderNote": "Entering a verified border checkpoint records arrival only, never customs clearance.",
+      "createCheckpoint": "Add checkpoint",
+      "kinds": {
+        "port": "Port",
+        "border": "Border post",
+        "city": "City",
+        "depot": "Depot",
+        "customer_site": "Customer site",
+        "checkpoint": "Checkpoint"
+      }
+    }
+  },
+  "Portal": {
+    "title": "My shipments",
+    "description": "Shipments of your company with their latest status.",
+    "error": "Could not load shipments:",
+    "empty": "No shipments yet.",
+    "reference": "Reference",
+    "route": "Route",
+    "status": "Status",
+    "eta": "Estimated arrival",
+    "delayed": "Delayed",
+    "back": "Back",
+    "delivered": "Delivered",
+    "documents": "Proof of delivery",
+    "noDocuments": "No documents yet.",
+    "timeline": "Milestones",
+    "etaBasis": "based on the position recorded {at}",
+    "documentKind": {
+      "delivery_photo": "Delivery photo",
+      "delivery_signature": "Recipient signature",
+      "paperwork": "Paperwork"
+    },
+    "milestone": {
+      "created": "Shipment created",
+      "confirmed": "Confirmed",
+      "dispatched": "Dispatched",
+      "in_transit": "On the way",
+      "border_arrived": "Arrived at the border",
+      "border_cleared": "Border cleared",
+      "delivery_failed": "Delivery attempt failed",
+      "delivery_reattempt": "Delivery re-attempted",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "Track": {
+    "heading": "Shipment tracking",
+    "delayed": "Delayed",
+    "eta": "Estimated arrival",
+    "etaNote": "Estimate from the last trusted position; it can change.",
+    "delivered": "Delivered",
+    "position": "Approximate position",
+    "precision": "(±{km} km)",
+    "recorded": "recorded {at}",
+    "received": "received {at}",
+    "timeline": "Milestones",
+    "footer": "This page shows only what the sender chose to share.",
+    "unavailable": "Tracking is temporarily unavailable.",
+    "rateLimited": "Too many requests. Please try again in a minute.",
+    "freshness": {
+      "live": "Live",
+      "delayed": "Delayed signal",
+      "stale": "Last known position (stale)",
+      "offline": "Offline"
+    },
+    "status": {
+      "draft": "Being prepared",
+      "confirmed": "Confirmed",
+      "dispatched": "Dispatched",
+      "in_transit": "On the way",
+      "at_border": "At the border",
+      "delivered": "Delivered",
+      "delivery_failed": "Delivery attempt failed",
+      "cancelled": "Cancelled"
     }
   }
 }

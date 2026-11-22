@@ -65,7 +65,9 @@
       "dispatch": "Affectation",
       "fleet": "Flotte",
       "customers": "Clients",
-      "map": "Carte en direct"
+      "map": "Carte en direct",
+      "geofences": "Géorepérages",
+      "notifications": "Notifications"
     },
     "common": {
       "create": "Créer",
@@ -100,7 +102,10 @@
       "in_progress": "En cours",
       "paused": "En pause",
       "completed": "Terminé",
-      "aborted": "Interrompu"
+      "aborted": "Interrompu",
+      "link_active": "Actif",
+      "link_expired": "Expiré",
+      "link_revoked": "Révoqué"
     },
     "shipments": {
       "title": "Expéditions",
@@ -194,6 +199,169 @@
       "feedStale": "Les mises à jour en direct n’arrivent plus. La carte affiche les dernières données reçues à {time} ; les positions continuent de vieillir.",
       "updated": "Mis à jour {time}",
       "basemap": "Fond de carte : tuiles de développement. La production utilise des tuiles auto-hébergées."
+    },
+    "eta": {
+      "title": "Arrivée estimée",
+      "basis": "{km} km restants · d’après la position enregistrée {at}",
+      "noDestination": "Pas d’ETA : l’expédition n’a pas de point de destination.",
+      "none": "Pas encore d’ETA (aucune position GPS fiable)."
+    },
+    "delivery": {
+      "title": "Confirmer la livraison",
+      "recipient": "Nom du destinataire",
+      "photo": "Photo de livraison",
+      "signature": "Signature du destinataire",
+      "clear": "Effacer la signature",
+      "confirm": "Confirmer la livraison",
+      "note": "La photo et la signature deviennent visibles pour le client une fois la livraison confirmée."
+    },
+    "documents": {
+      "title": "Documents",
+      "kind": {
+        "delivery_photo": "Photo de livraison",
+        "delivery_signature": "Signature du destinataire",
+        "paperwork": "Documents"
+      },
+      "visibility": {
+        "internal": "interne",
+        "customer": "visible par le client"
+      }
+    },
+    "links": {
+      "title": "Liens de suivi publics",
+      "description": "Toute personne disposant du lien voit uniquement les champs autorisés, avec une position approximative (±1 km). Les liens expirent et peuvent être révoqués.",
+      "unnamed": "Lien sans nom",
+      "expiresAt": "expire le {at}",
+      "revoke": "Révoquer",
+      "label": "Libellé",
+      "labelHint": "ex. Destinataire",
+      "expires": "Validité (jours, max 90)",
+      "fields": "Visible par le destinataire",
+      "create": "Créer le lien",
+      "created": "Lien créé. Copiez-le maintenant :",
+      "copy": "Copier",
+      "copied": "Copié",
+      "onlyOnce": "Par sécurité, le lien n’est affiché qu’une fois. En cas de perte, révoquez-le et créez-en un nouveau.",
+      "error": "Impossible de créer le lien :",
+      "field": {
+        "status": "Statut",
+        "eta": "ETA",
+        "route": "Itinéraire",
+        "timeline": "Étapes",
+        "position": "Position approximative",
+        "delivery": "Heure de livraison"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "Aucune notification.",
+      "markRead": "Marquer comme lu",
+      "markAll": "Tout marquer comme lu"
+    },
+    "geofences": {
+      "title": "Géorepérages et points de contrôle",
+      "description": "Zones servant à détecter les passages aux points de contrôle à partir du GPS. Un géorepérage commence non vérifié ; seul un géorepérage frontalier vérifié peut passer une expédition « à la frontière ». Le dédouanement est toujours confirmé par une personne.",
+      "name": "Nom",
+      "kind": "Type",
+      "verified": "Vérifié",
+      "active": "Actif",
+      "yes": "Oui",
+      "no": "Non",
+      "unverified": "Non vérifié",
+      "verify": "Vérifier",
+      "activate": "Activer",
+      "deactivate": "Désactiver",
+      "empty": "Aucun géorepérage.",
+      "verifyNote": "Vérifiez seulement après avoir contrôlé que le contour correspond au lieu réel.",
+      "checkpoints": "Points de contrôle (surveillés sur chaque trajet)",
+      "border": "Frontière",
+      "inactive": "inactif",
+      "stopWatching": "Ne plus surveiller",
+      "new": "Nouveau géorepérage (cercle)",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "radius": "Rayon (m)",
+      "source": "Origine du contour",
+      "sourceHint": "D’où vient la position (relevé, carte, visite).",
+      "create": "Créer le géorepérage",
+      "newCheckpoint": "Surveiller un géorepérage comme point de contrôle",
+      "geofence": "Géorepérage",
+      "isBorder": "Passage de frontière",
+      "borderNote": "L’entrée dans un point frontalier vérifié enregistre seulement l’arrivée, jamais le dédouanement.",
+      "createCheckpoint": "Ajouter le point",
+      "kinds": {
+        "port": "Port",
+        "border": "Poste frontière",
+        "city": "Ville",
+        "depot": "Dépôt",
+        "customer_site": "Site client",
+        "checkpoint": "Point de contrôle"
+      }
+    }
+  },
+  "Portal": {
+    "title": "Mes expéditions",
+    "description": "Les expéditions de votre entreprise et leur dernier statut.",
+    "error": "Impossible de charger les expéditions :",
+    "empty": "Aucune expédition.",
+    "reference": "Référence",
+    "route": "Itinéraire",
+    "status": "Statut",
+    "eta": "Arrivée estimée",
+    "delayed": "En retard",
+    "back": "Retour",
+    "delivered": "Livrée",
+    "documents": "Preuve de livraison",
+    "noDocuments": "Aucun document.",
+    "timeline": "Étapes",
+    "etaBasis": "d’après la position enregistrée {at}",
+    "documentKind": {
+      "delivery_photo": "Photo de livraison",
+      "delivery_signature": "Signature du destinataire",
+      "paperwork": "Documents"
+    },
+    "milestone": {
+      "created": "Expédition créée",
+      "confirmed": "Confirmée",
+      "dispatched": "Expédiée",
+      "in_transit": "En route",
+      "border_arrived": "Arrivée à la frontière",
+      "border_cleared": "Frontière franchie",
+      "delivery_failed": "Échec de livraison",
+      "delivery_reattempt": "Nouvelle tentative de livraison",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    }
+  },
+  "Track": {
+    "heading": "Suivi d’expédition",
+    "delayed": "En retard",
+    "eta": "Arrivée estimée",
+    "etaNote": "Estimation d’après la dernière position fiable ; elle peut changer.",
+    "delivered": "Livrée",
+    "position": "Position approximative",
+    "precision": "(±{km} km)",
+    "recorded": "enregistrée {at}",
+    "received": "reçue {at}",
+    "timeline": "Étapes",
+    "footer": "Cette page affiche uniquement ce que l’expéditeur a choisi de partager.",
+    "unavailable": "Le suivi est temporairement indisponible.",
+    "rateLimited": "Trop de requêtes. Réessayez dans une minute.",
+    "freshness": {
+      "live": "En direct",
+      "delayed": "Signal retardé",
+      "stale": "Dernière position connue (ancienne)",
+      "offline": "Hors ligne"
+    },
+    "status": {
+      "draft": "En préparation",
+      "confirmed": "Confirmée",
+      "dispatched": "Expédiée",
+      "in_transit": "En route",
+      "at_border": "À la frontière",
+      "delivered": "Livrée",
+      "delivery_failed": "Échec de livraison",
+      "cancelled": "Annulée"
     }
   }
 }
