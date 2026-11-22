@@ -15,4 +15,7 @@ regexes = [
   '''https://public@sentry\.invalid/1''',
   '''bG9jYWwtZGV2LW9ubHktZmVybmV0LWtleS0wMDAwMDA=''',
   '''dGVzdC1vbmx5LWZlcm5ldC1rZXktMDAwMDAwMDAwMDA=''',
+  # Cognito app client ID of the driver app on the test environment (D-072): a public PKCE
+  # client with no client secret; it ships inside every APK. Not a credential.
+  '''^3n8gitbb8a5ctmuf8rdig9ccmf$''',
 ]
