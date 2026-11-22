@@ -252,6 +252,7 @@ def ingest(ctx: RequestContext, batch: list[LocationIn]) -> IngestResult:
     duplicate += [c.e.event_id for c in candidates if c.e.event_id not in inserted]  # lost a race
     stored = [c for c in candidates if c.e.event_id in inserted]
     _update_latest(ctx, stored, now)
+    _after_trusted_points(stored)
 
     return IngestResult(
         accepted=[c.e.event_id for c in stored],
@@ -545,3 +546,55 @@ def trip_track(
     return TrackOut(
         trip_id=trip_id, points=points, next_after=points[-1].recorded_at if len(rows) > limit else None
     )
+
+
+def _after_trusted_points(stored: list[_Candidate]) -> None:
+    """Phase 6 hooks, in the ingestion transaction: checkpoint/geofence detection and ETA.
+
+    Only trusted points (no blocking flag) are used. They are always newer than the vehicle's previous
+    latest point, so a late or replayed point can never re-trigger a checkpoint or move an ETA back.
+    """
+    from corridor.geofencing import services as geofencing
+    from corridor.geofencing.schemas import TrustedPoint
+    from corridor.shipments import services as shipments
+
+    by_trip: dict[tuple[uuid.UUID, uuid.UUID], list[_Candidate]] = {}
+    for c in stored:
+        if not c.flags & Flag.BLOCKING:
+            by_trip.setdefault((c.session.trip_id, c.session.vehicle_id), []).append(c)
+    for (trip_id, vehicle_id), items in by_trip.items():
+        items.sort(key=lambda c: c.e.recorded_at)
+        geofencing.process_trusted_points(
+            trip_id,
+            vehicle_id,
+            [
+                TrustedPoint(
+                    event_id=c.e.event_id, lat=c.e.latitude, lng=c.e.longitude, recorded_at=c.e.recorded_at
+                )
+                for c in items
+            ],
+        )
+        last = items[-1].e
+        shipments.recompute_eta_for_trip(
+            trip_id, lat=last.latitude, lng=last.longitude, recorded_at=last.recorded_at
+        )
+
+
+@dataclass(frozen=True)
+class LatestPoint:
+    latitude: float
+    longitude: float
+    recorded_at: datetime
+    received_at: datetime
+    freshness: Freshness
+
+
+def latest_point(vehicle_id: uuid.UUID) -> LatestPoint | None:
+    """The vehicle's latest trusted point with freshness, for internal callers that already enforced
+    access (e.g. a public tracking link resolved to this tenant). Requires a tenant context."""
+    v = VehicleLatestLocation.objects.filter(vehicle_id=vehicle_id).first()
+    if v is None:
+        return None
+    active = _session_activity([v.session_id]).get(v.session_id, False) if v.session_id else False
+    state, _ = freshness(v.recorded_at, now=timezone.now(), session_active=active, limits=thresholds())
+    return LatestPoint(v.point.y, v.point.x, v.recorded_at, v.received_at, state)

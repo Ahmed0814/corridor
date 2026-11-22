@@ -456,3 +456,14 @@ def attach_driver_profile(membership_id: uuid.UUID, driver_id: uuid.UUID) -> Non
 
 def attach_customer_profile(membership_id: uuid.UUID, customer_id: uuid.UUID) -> None:
     _attach_profile(membership_id, role="customer", field="customer_id", profile_id=customer_id)
+
+
+def office_user_ids_with_permission(permission: str) -> list[uuid.UUID]:
+    """Users with an ACTIVE tenant-wide membership in the current tenant whose role grants `permission`
+    (used by notifications; customers and drivers are reached through their own channels)."""
+    roles = [code for code, r in ROLES.items() if permission in r.permissions and r.scope == Scope.TENANT]
+    return list(
+        TenantMembership.objects.filter(status=TenantMembership.Status.ACTIVE, role_id__in=roles)
+        .values_list("user_id", flat=True)
+        .distinct()
+    )

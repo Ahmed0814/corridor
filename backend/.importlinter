@@ -179,6 +179,7 @@ forbidden_modules =
     corridor.documents.apps
     corridor.documents.migrations
     corridor.documents.models
+    corridor.documents.storage
     corridor.documents.tasks
     corridor.documents.tests
 allow_indirect_imports = True
@@ -426,6 +427,7 @@ source_modules =
 forbidden_modules =
     corridor.shipments.api
     corridor.shipments.apps
+    corridor.shipments.links
     corridor.shipments.migrations
     corridor.shipments.models
     corridor.shipments.tasks

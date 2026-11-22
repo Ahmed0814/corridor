@@ -8,7 +8,7 @@
 | 3 Core logistics | **Done**: CI green on `cfed399` (run 44958080301), all 5 jobs | 2026-11-21 |
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
 | 5 Driver app & offline | **Code done, CI green on `d3e15b3` (run 44962750043). Emulator runs and human device sign-off pending** | 2026-11-21 |
-| 6 Customer & operations | Not started | — |
+| 6 Customer & operations | **In progress**: backend done and tested locally (231 tests); web and driver-app screens next | 2026-11-22 |
 | 7 Infrastructure & deployment | Not started | — |
 | 8 Final verification | Not started | — |
 
@@ -447,6 +447,29 @@ Database check for that trip: `TRP-261121-CE7A69 | rows 10000 | distinct events 
 - **D-023** Egress design (NAT vs interface endpoints): decide with Phase 7 prices.
 - **D-037** Mobile app identifiers (`com.corridor.driver` placeholder) before the first store/EAS build.
 - **D-027** Operators must verify the corridor reference geofences (port, borders, cities) before border events are trusted.
+
+## Phase 6 — Customer and operations (in progress)
+
+### Backend (done locally, 2026-11-22)
+- Geofences/checkpoints with detection in GPS ingestion (D-067), deterministic ETA (D-068), public tracking links with a SECURITY DEFINER resolver (D-017), notifications via outbox handlers with suppressed email (D-069), validated document uploads (D-070), proof of delivery (D-071), Redis rate limit on the public endpoint.
+- New tables, all with forced RLS: `geofences`, `checkpoints`, `checkpoint_visits`, `tracking_links`, `notifications`, `email_log`, `documents`.
+
+### Verification (real output)
+```
+$ REQUIRE_SERVICES=1 uv run pytest -q tests/test_phase6.py
+13 passed in 11.17s
+$ REQUIRE_SERVICES=1 uv run pytest -q
+231 passed in 57.01s
+ruff: All checks passed! | mypy (win + linux): no issues in 203 files | lint-imports: 17 kept, 0 broken
+makemigrations --check: No changes detected | permission matrix: ok | pip-audit: No known vulnerabilities found
+```
+Live (uvicorn on :8000): `/api/v1/meta` 200; unknown `/api/v1/public/tracking/<token>` 404; `/api/v1/geofences` and `/api/v1/notifications` 401 without a token; all new routes present in the OpenAPI schema.
+
+### Remaining for Phase 6
+- Web: customer portal, public tracking page, notifications inbox, geofence management, tracking links and delivery evidence on the shipment page.
+- Driver app: delivery photo and signature capture before confirming.
+
+---
 
 ## Needs credentials
 (Interfaces plus test adapters will ship. None of these are live.)

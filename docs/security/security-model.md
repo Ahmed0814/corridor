@@ -69,6 +69,7 @@ shipments only" for a driver and "own shipments only" for a customer. Owner, Adm
 | `delivery.confirm` Confirm or fail a delivery | ✓ | ✓ | ✓ | – | – | – | ✓ | – |
 | `documents.read` Read documents | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `documents.upload` Upload documents | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | – |
+| `geofences.write` Create, verify and switch geofences and checkpoints | ✓ | ✓ | ✓ | – | – | – | – | – |
 
 | Role | MFA required | Scope | App clients |
 |---|---|---|---|

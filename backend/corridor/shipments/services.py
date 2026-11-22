@@ -110,6 +110,9 @@ def _out(s: Shipment, *, customer_names: dict[uuid.UUID, str] | None = None) -> 
         destination_label=s.destination_label,
         destination=_pt(s.destination_point),
         eta=s.eta,
+        eta_method=s.eta_method,
+        eta_remaining_km=s.eta_remaining_km,
+        eta_basis_recorded_at=s.eta_basis_recorded_at,
         delivered_at=s.delivered_at,
         recipient_name=s.recipient_name,
         containers=[
@@ -403,15 +406,30 @@ def confirm_border_clearance(ctx: RequestContext, shipment_id: uuid.UUID, data: 
 
 def deliver_shipment(ctx: RequestContext, shipment_id: uuid.UUID, data: DeliverIn) -> ShipmentOut:
     """in_transit -> delivered. Premature delivery is impossible: draft/confirmed/dispatched/at_border
-    are rejected. Photo and signature evidence arrive with the delivery module (Phase 6)."""
+    are rejected. Needs proof of delivery: delivery photo(s) and a signature of THIS shipment; they
+    become visible to the customer once the delivery is confirmed."""
+    from corridor.documents import services as documents
+
     s = _get_visible_for_update(ctx, shipment_id)
     assert_state(s.status, (S.IN_TRANSIT,), "deliver")
     rule(_trips().has_started_trip(s.id), "no_started_trip", "The shipment has no started trip.")
+    photo_ids = list(dict.fromkeys(data.photo_ids))
+    documents.assert_evidence(s.id, photo_ids=photo_ids, signature_id=data.signature_id)
+    documents.share_with_customer([*photo_ids, data.signature_id])
     s.delivered_at = timezone.now()
     s.recipient_name = data.recipient_name
     _release_containers(s, ctx)
     _transition(
-        s, S.DELIVERED, "delivered", ctx, payload={"recipient_name": data.recipient_name, "note": data.note}
+        s,
+        S.DELIVERED,
+        "delivered",
+        ctx,
+        payload={
+            "recipient_name": data.recipient_name,
+            "note": data.note,
+            "photo_ids": [str(p) for p in photo_ids],
+            "signature_id": str(data.signature_id),
+        },
     )
     _outbox("shipment.delivered", s, delivered_at=s.delivered_at.isoformat())
     return _out(s)
@@ -487,3 +505,110 @@ def statuses(shipment_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
 
 def references(shipment_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
     return dict(Shipment.objects.filter(id__in=shipment_ids).values_list("id", "reference"))
+
+
+# ---------------------------------------------------------------- GPS-driven updates (Phase 6)
+
+
+def border_arrival_from_geofence(
+    shipment_ids: list[uuid.UUID],
+    *,
+    border: str,
+    trip_id: uuid.UUID,
+    checkpoint_id: uuid.UUID,
+    gps_event_id: uuid.UUID,
+    recorded_at: Any,
+) -> int:
+    """System transition in_transit -> at_border when a trip enters a VERIFIED border checkpoint.
+    Arrival only: clearance remains confirm_border_clearance by an authorized operator (hard rule 8)."""
+    moved = 0
+    for s in (
+        Shipment.objects.select_for_update().filter(id__in=shipment_ids, status=S.IN_TRANSIT).order_by("id")
+    ):
+        payload = {
+            "border": border,
+            "source": "geofence",
+            "trip_id": str(trip_id),
+            "checkpoint_id": str(checkpoint_id),
+            "gps_event_id": str(gps_event_id),
+            "recorded_at": recorded_at.isoformat(),
+        }
+        _transition(s, S.AT_BORDER, "border_arrived", None, payload=payload, actor_kind=ActorKind.SYSTEM)
+        _outbox("border.arrived", s, border=border, source="geofence", trip_id=str(trip_id))
+        moved += 1
+    return moved
+
+
+# Deterministic ETA (D-068). An explainable formula, never a model (hard rule 9):
+#   remaining = great-circle distance(latest trusted point, destination) x ROAD_FACTOR
+#   eta       = point recorded time + remaining / PLANNING_SPEED (+ BORDER_DWELL while at a border)
+ETA_METHOD = "deterministic_v1"
+ROAD_FACTOR = 1.3  # corridor roads are longer than the straight line
+PLANNING_SPEED_KMH = 45.0  # loaded trucks incl. short stops, Djibouti-Addis corridor
+BORDER_DWELL_H = 6.0  # typical wait at Galafi/Dewele until clearance
+ARRIVED_KM = 2.0  # within this distance the remaining time is zero
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    import math
+
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = p2 - p1, math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * 6371.0 * math.asin(math.sqrt(a))
+
+
+def compute_eta(
+    *, lat: float, lng: float, recorded_at: Any, dest_lat: float, dest_lng: float, at_border: bool
+) -> tuple[Any, float]:
+    """Pure function: (eta, remaining_km). Unit-tested."""
+    from datetime import timedelta
+
+    remaining = _haversine_km(lat, lng, dest_lat, dest_lng) * ROAD_FACTOR
+    if remaining <= ARRIVED_KM:
+        remaining = 0.0
+    hours = remaining / PLANNING_SPEED_KMH + (BORDER_DWELL_H if at_border else 0.0)
+    return recorded_at + timedelta(hours=hours), round(remaining, 1)
+
+
+def recompute_eta_for_trip(trip_id: uuid.UUID, *, lat: float, lng: float, recorded_at: Any) -> int:
+    """Called by GPS ingestion after a newer trusted point for the trip's vehicle. Shipments without a
+    destination point get no ETA (never a guessed one)."""
+    updated = 0
+    ids = _trips().shipment_ids_for_trip(trip_id)
+    for s in Shipment.objects.select_for_update().filter(
+        id__in=ids, status__in=[S.DISPATCHED, S.IN_TRANSIT, S.AT_BORDER, S.DELIVERY_FAILED]
+    ):
+        if s.destination_point is None:
+            if s.eta_method != "unavailable_no_destination":
+                s.eta, s.eta_method, s.eta_remaining_km = None, "unavailable_no_destination", None
+                s.save(update_fields=["eta", "eta_method", "eta_remaining_km", "updated_at"])
+            continue
+        if s.eta_basis_recorded_at is not None and recorded_at <= s.eta_basis_recorded_at:
+            continue  # never let an older point move the ETA (same rule as the latest location)
+        eta, remaining = compute_eta(
+            lat=lat,
+            lng=lng,
+            recorded_at=recorded_at,
+            dest_lat=s.destination_point.y,
+            dest_lng=s.destination_point.x,
+            at_border=s.status == S.AT_BORDER,
+        )
+        s.eta, s.eta_method, s.eta_remaining_km = eta, ETA_METHOD, remaining
+        s.eta_computed_at, s.eta_basis_recorded_at = timezone.now(), recorded_at
+        s.save(
+            update_fields=[
+                "eta",
+                "eta_method",
+                "eta_remaining_km",
+                "eta_computed_at",
+                "eta_basis_recorded_at",
+                "updated_at",
+            ]
+        )
+        updated += 1
+    return updated
+
+
+def customer_id_of(shipment_id: uuid.UUID) -> uuid.UUID | None:
+    return Shipment.objects.filter(id=shipment_id).values_list("customer_id", flat=True).first()

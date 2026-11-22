@@ -176,6 +176,24 @@ class ApiClient:
     def post(self, path: str, body: Any = None, **kw: Any) -> tuple[int, Any]:
         return self.request("POST", path, body if body is not None else {}, **kw)
 
+    def upload(
+        self, path: str, fields: dict[str, Any], *, headers: dict[str, str] | None = None
+    ) -> tuple[int, Any]:
+        """multipart/form-data POST (files as django SimpleUploadedFile values)."""
+        extra: dict[str, str] = {}
+        if self.token:
+            extra["HTTP_AUTHORIZATION"] = f"Bearer {self.token}"
+        if self.tenant:
+            extra["HTTP_X_TENANT"] = self.tenant
+        for k, v in (headers or {}).items():
+            extra["HTTP_" + k.upper().replace("-", "_")] = v
+        response = self._client.post(f"/api/v1{path}", data=fields, **extra)  # type: ignore[arg-type]
+        reset_db_context()
+        try:
+            return response.status_code, response.json()
+        except ValueError:
+            return response.status_code, response.content
+
     def patch(self, path: str, body: Any = None, **kw: Any) -> tuple[int, Any]:
         return self.request("PATCH", path, body if body is not None else {}, **kw)
 

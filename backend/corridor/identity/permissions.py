@@ -58,6 +58,7 @@ PERMISSIONS: dict[str, str] = {
     "delivery.confirm": "Confirm or fail a delivery",
     "documents.read": "Read documents",
     "documents.upload": "Upload documents",
+    "geofences.write": "Create, verify and switch geofences and checkpoints",
 }
 
 
@@ -98,9 +99,15 @@ _OPS_MANAGER = frozenset(
         "delivery.confirm",
         "documents.read",
         "documents.upload",
+        "geofences.write",
     }
 )
-_DISPATCHER = _OPS_MANAGER - {"customers.write", "shipments.confirm_clearance", "delivery.confirm"}
+_DISPATCHER = _OPS_MANAGER - {
+    "customers.write",
+    "shipments.confirm_clearance",
+    "delivery.confirm",
+    "geofences.write",
+}
 
 ROLES: dict[str, RoleDef] = {
     r.code: r

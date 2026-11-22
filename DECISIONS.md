@@ -71,6 +71,11 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-064 | Mock-location fixes are never recorded | Decided |
 | D-065 | Malformed batches are bisected; 401 pauses uploads | Decided |
 | D-066 | Driver app navigation without Expo Router (for now) | Decided (revisit) |
+| D-067 | Geofences start unverified; only verified border entry sets at_border (never clearance) | Decided |
+| D-068 | Deterministic ETA formula (distance x 1.3 / 45 km/h + 6 h border dwell) | Decided (tune with pilot data) |
+| D-069 | Notifications as outbox handlers; real email only with EMAIL_SENDING_ENABLED | Decided |
+| D-070 | Documents validated by content; local storage adapter until S3 | Decided |
+| D-071 | Delivery requires photo + signature of the same shipment | Decided |
 
 ---
 
@@ -277,3 +282,19 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-066 Driver app navigation without Expo Router (for now)
 **Context:** the project's `AGENTS.md` recommends Expo Router. **Choice:** the driver app has two states (signed out, trips screen) and keeps simple state-based rendering. Expo Router will be introduced when delivery confirmation, photos and checkpoints add screens (Phase 6). **Trade-off:** a later refactor of `App.tsx`.
+
+## D-067 Geofences start unverified; GPS border entry is arrival only
+**Choice:** a geofence (polygon, or circle stored as a polygon) starts unverified. A user with `geofences.write` (admin, ops manager) verifies it; the action is audited. Checkpoints are geofences watched on every trip. Detection runs inside GPS ingestion on trusted points only (no blocking flag, newer than the vehicle's latest), so late, replayed, inaccurate or impossible-speed points never open or close a visit. Entering a *verified* border checkpoint moves the trip's in-transit shipments to `at_border` (system actor, `source: geofence`) and emits `border.arrived`. Clearance stays a separate, permissioned human action (hard rule 8). Unverified borders record the visit labelled unverified. **Trade-off:** operators must verify outlines before automation applies.
+
+## D-068 Deterministic ETA
+**Choice:** `remaining = great-circle(latest trusted point, destination) x 1.3`; `eta = recorded_at + remaining / 45 km/h (+ 6 h while at a border)`; within 2 km the remaining time is zero. Stored with `eta_method = deterministic_v1`, the basis point's `recorded_at` and the computation time; an older point never moves it. Shipments without a destination point show `unavailable_no_destination` instead of a guess. No ML (hard rule 9). **Trade-off:** coarse on mountain sections; constants to be tuned with pilot trip data.
+
+## D-069 Notifications via the outbox; real email needs approval
+**Choice:** modules register idempotent handlers per event type (`events.register_handler`); the worker runs them under the event's tenant context. Notifications create one in-app row per office user with `shipments.read` (unique per user and event) and email the customer contact for dispatched/delivered/delayed. Every email is logged (`email_log`, unique per address and event). Unless `EMAIL_SENDING_ENABLED=true` (needs explicit approval and SES credentials) emails are written only to the console/test outbox and logged as `suppressed`. **Trade-off:** no customer-user in-app notifications yet (customers use the portal).
+
+## D-070 Document uploads
+**Choice:** uploads are accepted by magic bytes (JPEG, PNG, WebP, PDF), at most 10 MB; the declared type is ignored. Signatures are JSON stroke data with numbers only (no SVG or images, so no script can hide in them). Keys are `tenants/<tenant>/documents/<id>`; `LocalStorage` in development, `S3Storage` raises until Phase 7 credentials exist. Downloads use `nosniff`, a sandbox CSP and `no-store`. Customers see only documents marked customer-visible. Idempotency fingerprints multipart requests from parsed fields plus file hashes. **Trade-off:** no virus scanning yet (Phase 7: S3 + scanning).
+
+## D-071 Proof of delivery
+**Choice:** `deliver` requires at least one delivery photo and a signature already uploaded for the same shipment, checked by kind. On success they become customer-visible and their ids are written into the `delivered` event. **Trade-off:** the driver app must upload before confirming (Phase 6 mobile work).
+

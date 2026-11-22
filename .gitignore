@@ -43,3 +43,4 @@ Thumbs.db
 .devtools/
 backend/staticfiles/
 backend/.gps-archive/
+backend/.documents/

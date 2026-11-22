@@ -88,3 +88,8 @@ def is_active_customer(customer_id: uuid.UUID) -> bool:
 
 def names(customer_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
     return dict(Customer.objects.filter(id__in=customer_ids).values_list("id", "name"))
+
+
+def email_of(customer_id: uuid.UUID) -> str | None:
+    email = Customer.objects.filter(id=customer_id).values_list("email", flat=True).first()
+    return email or None

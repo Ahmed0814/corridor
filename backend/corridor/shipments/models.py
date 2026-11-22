@@ -48,8 +48,12 @@ class Shipment(TenantOwnedModel):
     origin_point = gis.PointField(srid=4326, null=True, blank=True)
     destination_label = models.CharField(max_length=200)
     destination_point = gis.PointField(srid=4326, null=True, blank=True)
+    # Deterministic ETA (D-068): recomputed from the latest trusted GPS point; never AI.
     eta = models.DateTimeField(null=True, blank=True)
     eta_method = models.CharField(max_length=32, blank=True)
+    eta_computed_at = models.DateTimeField(null=True, blank=True)
+    eta_basis_recorded_at = models.DateTimeField(null=True, blank=True)  # GPS point the ETA is based on
+    eta_remaining_km = models.FloatField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
     recipient_name = models.CharField(max_length=200, blank=True)
     created_by = models.UUIDField(null=True)
@@ -107,3 +111,28 @@ class ShipmentEvent(TenantOwnedModel):
     class Meta:
         db_table = "shipment_events"
         indexes = [models.Index(fields=["shipment", "id"], name="shipment_events_by_shipment")]
+
+
+class TrackingLink(TenantOwnedModel):
+    """A public, revocable, expiring link to one shipment (D-017, security-model.md §6).
+
+    Only ``sha256(token)`` is stored; the token is shown once. The public endpoint resolves it
+    through the SECURITY DEFINER function ``public_resolve_tracking_link`` and exposes only the
+    ``allowed_fields``.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    shipment = models.ForeignKey(Shipment, on_delete=models.PROTECT, related_name="tracking_links")
+    token_hash = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=120, blank=True)
+    allowed_fields = models.JSONField(default=list)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.UUIDField(null=True, blank=True)
+    revoke_reason = models.CharField(max_length=300, blank=True)
+    created_by = models.UUIDField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tracking_links"
+        indexes = [models.Index(fields=["tenant", "shipment"], name="tracking_links_by_shipment")]

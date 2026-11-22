@@ -45,3 +45,20 @@ def emit(event_type: str, *, aggregate_type: str, aggregate_id: Any, payload: di
     )
     event.save()
     return int(event.id)
+
+
+# Handlers registered by other modules at startup (AppConfig.ready). The worker calls them for each
+# relayed outbox event, under that event's tenant context. Handlers must be idempotent.
+_HANDLERS: dict[str, list[Any]] = {}
+
+
+def register_handler(event_types: Any, handler: Any) -> None:
+    for t in event_types:
+        if t not in EVENT_TYPES:
+            raise ValueError(f"unknown event type {t!r}")
+        if handler not in _HANDLERS.setdefault(t, []):
+            _HANDLERS[t].append(handler)
+
+
+def handlers_for(event_type: str) -> list[Any]:
+    return list(_HANDLERS.get(event_type, []))

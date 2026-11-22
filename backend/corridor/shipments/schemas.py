@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from ninja import Schema
 from pydantic import ConfigDict, Field
@@ -60,8 +60,13 @@ class BorderIn(_In):
 
 
 class DeliverIn(_In):
+    """Proof of delivery (Phase 6): at least one delivery photo and the recipient's signature, both
+    uploaded first to POST /shipments/{id}/documents."""
+
     recipient_name: str = Field(min_length=1, max_length=200)
     note: str = Field(default="", max_length=1000)
+    photo_ids: list[uuid.UUID] = Field(min_length=1, max_length=10)
+    signature_id: uuid.UUID
 
 
 class CorrectionIn(_In):
@@ -92,6 +97,9 @@ class ShipmentOut(Schema):
     destination_label: str
     destination: GeoPoint | None
     eta: datetime | None
+    eta_method: str
+    eta_remaining_km: float | None
+    eta_basis_recorded_at: datetime | None
     delivered_at: datetime | None
     recipient_name: str
     containers: list[ContainerRef]
@@ -115,3 +123,58 @@ class ShipmentEventOut(Schema):
 class ShipmentPage(Schema):
     items: list[ShipmentOut]
     next_cursor: str | None
+
+
+# ---------------------------------------------------------------- public tracking links (Phase 6)
+
+LinkField = Literal["status", "eta", "route", "timeline", "position", "delivery"]
+
+
+class TrackingLinkIn(_In):
+    label: str = Field(default="", max_length=120)
+    expires_in_days: int = Field(default=30, ge=1, le=90)
+    allowed_fields: list[LinkField] | None = None  # default: all public fields
+
+
+class TrackingLinkOut(Schema):
+    id: uuid.UUID
+    shipment_id: uuid.UUID
+    label: str
+    allowed_fields: list[str]
+    expires_at: datetime
+    revoked_at: datetime | None
+    state: Literal["active", "expired", "revoked"]
+    created_at: datetime
+
+
+class TrackingLinkCreated(TrackingLinkOut):
+    token: str  # shown once; only its hash is stored
+
+
+class PublicPosition(Schema):
+    latitude: float
+    longitude: float
+    precision_km: float
+    recorded_at: datetime
+    received_at: datetime
+    freshness: str
+
+
+class PublicTimelineItem(Schema):
+    label: str
+    at: datetime
+
+
+class PublicTracking(Schema):
+    """Only fields the link allows; nothing about drivers, vehicles or internal actors."""
+
+    reference: str
+    status: str | None = None
+    is_delayed: bool | None = None
+    origin_label: str | None = None
+    destination_label: str | None = None
+    eta: datetime | None = None
+    eta_method: str | None = None
+    delivered_at: datetime | None = None
+    timeline: list[PublicTimelineItem] | None = None
+    position: PublicPosition | None = None

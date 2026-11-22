@@ -27,6 +27,7 @@ from typing import Any
 
 from django.db import IntegrityError, transaction
 from django.http import HttpRequest, HttpResponse
+from django.http.request import RawPostDataException
 from django.utils import timezone
 from ninja.responses import NinjaJSONEncoder, Status
 
@@ -45,7 +46,22 @@ def _fingerprint(request: HttpRequest) -> str:
     h.update(b"\0")
     h.update(request.path.encode())
     h.update(b"\0")
-    h.update(request.body or b"")
+    try:
+        h.update(request.body or b"")
+    except RawPostDataException:
+        # multipart uploads: the stream was already parsed into POST/FILES, so fingerprint those
+        # (form fields plus each file's name and content hash) instead of the raw body.
+        for key in sorted(request.POST):
+            h.update(f"{key}={request.POST.getlist(key)}".encode())
+            h.update(b"\0")
+        for key in sorted(request.FILES):
+            for f in request.FILES.getlist(key):
+                digest = hashlib.sha256()
+                for chunk in f.chunks():
+                    digest.update(chunk)
+                f.seek(0)
+                h.update(f"{key}:{f.name}:{digest.hexdigest()}".encode())
+                h.update(b"\0")
     return h.hexdigest()
 
 

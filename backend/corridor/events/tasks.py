@@ -21,11 +21,6 @@ def heartbeat() -> str:
     return "ok"
 
 
-# Handlers per event type, run by the worker. Each must be idempotent (at-least-once delivery).
-# Notifications, realtime fan-out and ETA recomputation register here in later phases.
-HANDLERS: dict[str, list[str]] = {}
-
-
 def relay_once(batch: int = RELAY_BATCH) -> int:
     """Publish unpublished outbox rows, oldest first; returns how many were published.
 
@@ -84,7 +79,24 @@ def dispatch_event(
     aggregate_id: str,
     payload: dict[str, Any],
 ) -> int:
-    """Fan an outbox event out to its handlers (none registered yet in Phase 3)."""
-    handlers = HANDLERS.get(event_type, [])
+    """Fan an outbox event out to the handlers registered for its type, each under the event's tenant
+    context (the tenant comes from the outbox row written server-side, never from user input)."""
+    import uuid as _uuid
+
+    from corridor.core.tenancy import tenant_context
+    from corridor.events.services import handlers_for
+
+    event = {
+        "event_id": event_id,
+        "tenant_id": tenant_id,
+        "event_type": event_type,
+        "aggregate_type": aggregate_type,
+        "aggregate_id": aggregate_id,
+        "payload": payload,
+    }
+    handlers = handlers_for(event_type)
+    for handler in handlers:
+        with tenant_context(_uuid.UUID(tenant_id)):
+            handler(event)
     log.info("event_dispatched", event_id=event_id, event_type=event_type, handlers=len(handlers))
     return len(handlers)

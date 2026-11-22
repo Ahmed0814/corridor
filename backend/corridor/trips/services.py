@@ -393,6 +393,43 @@ def trip_ids_for_shipment(shipment_id: uuid.UUID) -> list[uuid.UUID]:
     )
 
 
+def shipment_ids_for_trip(trip_id: uuid.UUID) -> list[uuid.UUID]:
+    return _shipment_ids(trip_id)
+
+
+def record_system_event(trip_id: uuid.UUID, etype: str, payload: dict[str, Any]) -> None:
+    """Append a system event (no status change) to a trip's history, e.g. checkpoint entry/exit."""
+    t = Trip.objects.filter(id=trip_id).first()
+    if t is None:
+        raise not_found()
+    _event(t, etype, None, from_status=t.status, payload=payload)
+
+
+def moving_trip_for_shipment(shipment_id: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID] | None:
+    """(trip_id, vehicle_id) of the started, not finished trip carrying this shipment, if any."""
+    trip_ids = TripShipment.objects.filter(shipment_id=shipment_id).values("trip_id")
+    row = (
+        TripAssignment.objects.filter(
+            trip_id__in=trip_ids, status=ACTIVE, trip__status__in=[T.IN_PROGRESS, T.PAUSED]
+        )
+        .order_by("-created_at")
+        .values_list("trip_id", "vehicle_id")
+        .first()
+    )
+    return (row[0], row[1]) if row else None
+
+
+def started_trip_for_shipment(shipment_id: uuid.UUID) -> uuid.UUID | None:
+    """The most recently started trip carrying this shipment (in progress, paused or completed)."""
+    trip_ids = TripShipment.objects.filter(shipment_id=shipment_id).values("trip_id")
+    return (
+        Trip.objects.filter(id__in=trip_ids, status__in=[T.IN_PROGRESS, T.PAUSED, T.COMPLETED])
+        .order_by("-started_at")
+        .values_list("id", flat=True)
+        .first()
+    )
+
+
 def shipment_ids_for_driver(driver_id: uuid.UUID | None) -> list[uuid.UUID]:
     if driver_id is None:
         return []

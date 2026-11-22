@@ -143,6 +143,22 @@ GPS_RETENTION_DROP_ENABLED: bool = env.bool("GPS_RETENTION_DROP_ENABLED", defaul
 GPS_ARCHIVE_BACKEND: str = env.str("GPS_ARCHIVE_BACKEND", default="local" if IS_LOCAL else "s3")
 GPS_ARCHIVE_DIR: str = env.str("GPS_ARCHIVE_DIR", default=str(BASE_DIR / ".gps-archive"))
 
+# --------------------------------------------------------------------------- email (D-069)
+# Real email needs explicit approval (MASTER_PROMPT §0.3). Development prints to the console; tests use
+# Django's in-memory outbox; production uses SES once credentials exist and sending is approved.
+EMAIL_BACKEND: str = env.str(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend"
+    if IS_LOCAL
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_SENDING_ENABLED: bool = env.bool("EMAIL_SENDING_ENABLED", default=False)
+DEFAULT_FROM_EMAIL: str = env.str("DEFAULT_FROM_EMAIL", default="Corridor <no-reply@example.invalid>")
+
+# --------------------------------------------------------------------------- document storage (D-070)
+DOCUMENT_STORAGE_BACKEND: str = env.str("DOCUMENT_STORAGE_BACKEND", default="local" if IS_LOCAL else "s3")
+DOCUMENT_STORAGE_DIR: str = env.str("DOCUMENT_STORAGE_DIR", default=str(BASE_DIR / ".documents"))
+
 # --------------------------------------------------------------------------- field encryption
 # Application-level encryption of sensitive fields such as driver license numbers (D-019).
 # Comma-separated Fernet keys, newest first (rotation: prepend a new key, re-encrypt, drop old).

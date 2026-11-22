@@ -4,22 +4,28 @@ from __future__ import annotations
 
 import uuid
 
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja import Router, Status
 
+from corridor.core import ratelimit
+from corridor.core.api import api
 from corridor.core.idempotency import idempotent
 from corridor.identity.services import ctx_of, requires, tenant_auth
-from corridor.shipments import services
+from corridor.shipments import links, services
 from corridor.shipments.schemas import (
     BorderIn,
     CorrectionIn,
     DeliverIn,
+    PublicTracking,
     ReasonIn,
     ShipmentEventOut,
     ShipmentIn,
     ShipmentOut,
     ShipmentPage,
     ShipmentUpdateIn,
+    TrackingLinkCreated,
+    TrackingLinkIn,
+    TrackingLinkOut,
 )
 
 router = Router(tags=["shipments"], auth=tenant_auth)
@@ -161,3 +167,51 @@ def clear_delay(request: HttpRequest, shipment_id: uuid.UUID) -> ShipmentOut:
 @idempotent
 def correct(request: HttpRequest, shipment_id: uuid.UUID, payload: CorrectionIn) -> ShipmentOut:
     return services.correct_status(ctx_of(request), shipment_id, payload)
+
+
+# ---------------------------------------------------------------- public tracking links (Phase 6)
+
+
+@router.get(
+    "/shipments/{shipment_id}/tracking-links", response=list[TrackingLinkOut], summary="Tracking links"
+)
+@requires("shipments.read")
+def list_tracking_links(request: HttpRequest, shipment_id: uuid.UUID) -> list[TrackingLinkOut]:
+    return links.list_links(ctx_of(request), shipment_id)
+
+
+@router.post(
+    "/shipments/{shipment_id}/tracking-links",
+    response={201: TrackingLinkCreated},
+    summary="Create a public tracking link (the token is shown once)",
+)
+@requires("tracking_links.create")
+@idempotent
+def create_tracking_link(
+    request: HttpRequest, shipment_id: uuid.UUID, payload: TrackingLinkIn
+) -> Status[TrackingLinkCreated]:
+    return Status(201, links.create_link(ctx_of(request), shipment_id, payload))
+
+
+@router.post("/tracking-links/{link_id}/revoke", response=TrackingLinkOut, summary="Revoke a tracking link")
+@requires("tracking_links.revoke")
+@idempotent
+def revoke_tracking_link(request: HttpRequest, link_id: uuid.UUID, payload: ReasonIn) -> TrackingLinkOut:
+    return links.revoke_link(ctx_of(request), link_id, payload.reason)
+
+
+public_router = Router(tags=["public"], auth=None)
+
+
+@public_router.get(
+    "/public/tracking/{token}",
+    response=PublicTracking,
+    summary="Public shipment tracking (no sign-in; allowlisted fields only)",
+)
+def public_tracking(request: HttpRequest, token: str) -> HttpResponse:
+    ratelimit.check("public_tracking", request.META.get("REMOTE_ADDR") or "unknown", limit=60)
+    view = links.resolve_public(token)
+    response = api.create_response(request, view.model_dump(mode="json", exclude_none=True), status=200)
+    response["Cache-Control"] = "no-store"
+    response["Referrer-Policy"] = "no-referrer"
+    return response

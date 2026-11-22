@@ -95,6 +95,33 @@ def s(world: World) -> Setup:
     )
 
 
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64  # magic bytes are what the upload check reads
+SIGNATURE = b'{"width": 300, "height": 100, "strokes": [[[10, 10], [50, 40], [90, 20]]]}'
+
+
+def evidence(c: ApiClient, shipment_id: str) -> dict[str, Any]:
+    """Upload a delivery photo and a signature; returns the proof-of-delivery fields."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    def up(kind: str, name: str, data: bytes) -> str:
+        code, body = c.upload(
+            f"/shipments/{shipment_id}/documents",
+            {"kind": kind, "file": SimpleUploadedFile(name, data)},
+            headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+        assert code == 201, body
+        return str(body["id"])
+
+    return {
+        "photo_ids": [up("delivery_photo", "p.png", PNG)],
+        "signature_id": up("delivery_signature", "s.json", SIGNATURE),
+    }
+
+
+def deliver(c: ApiClient, shipment_id: str, name: str = "TEST Recipient") -> tuple[int, Any]:
+    return post(c, f"/shipments/{shipment_id}/deliver", {"recipient_name": name, **evidence(c, shipment_id)})
+
+
 def new_shipment(s: Setup, containers: list[str] | None = None) -> dict[str, Any]:
     created: dict[str, Any] = ok(
         post(
@@ -198,7 +225,7 @@ def test_full_lifecycle_end_to_end(s: Setup, world: World) -> None:
 
     ok(post(s.driver, f"/trips/{trip['id']}/pause"))
     ok(post(s.driver, f"/trips/{trip['id']}/resume"))
-    delivered = ok(post(s.driver, f"/shipments/{sh['id']}/deliver", {"recipient_name": "TEST Recipient"}))
+    delivered = ok(deliver(s.driver, sh["id"]))
     assert delivered["status"] == "delivered" and delivered["delivered_at"] is not None
     assert ok(s.ops.get(f"/containers/{s.container_id}"))["availability"] == "available"
 
@@ -291,11 +318,25 @@ def test_one_step_dispatch_is_all_or_nothing(s: Setup) -> None:
 def test_invalid_transitions_are_rejected(s: Setup) -> None:
     sh = new_shipment(s)
     err(post(s.ops, f"/shipments/{sh['id']}/dispatch"), 409, "invalid_transition")  # draft
-    err(post(s.ops, f"/shipments/{sh['id']}/deliver", {"recipient_name": "x"}), 409, "invalid_transition")
+    err(
+        post(
+            s.ops,
+            f"/shipments/{sh['id']}/deliver",
+            {"recipient_name": "x", "photo_ids": [str(uuid.uuid4())], "signature_id": str(uuid.uuid4())},
+        ),
+        409,
+        "invalid_transition",
+    )
     ok(post(s.ops, f"/shipments/{sh['id']}/confirm"))
     err(post(s.ops, f"/shipments/{sh['id']}/confirm"), 409, "invalid_transition")  # twice
     body = err(
-        post(s.ops, f"/shipments/{sh['id']}/deliver", {"recipient_name": "x"}), 409, "invalid_transition"
+        post(
+            s.ops,
+            f"/shipments/{sh['id']}/deliver",
+            {"recipient_name": "x", "photo_ids": [str(uuid.uuid4())], "signature_id": str(uuid.uuid4())},
+        ),
+        409,
+        "invalid_transition",
     )
     assert body["error"]["details"]["status"] == "confirmed"  # premature delivery
     err(post(s.ops, f"/shipments/{sh['id']}/dispatch"), 409, "no_assigned_trip")  # no trip yet
@@ -401,7 +442,15 @@ def test_failed_delivery_and_reattempt(s: Setup) -> None:
         ok(post(s.driver, f"/shipments/{sh['id']}/delivery-failed", {"reason": "Gate closed"}))["status"]
         == "delivery_failed"
     )
-    err(post(s.driver, f"/shipments/{sh['id']}/deliver", {"recipient_name": "x"}), 409, "invalid_transition")
+    err(
+        post(
+            s.driver,
+            f"/shipments/{sh['id']}/deliver",
+            {"recipient_name": "x", "photo_ids": [str(uuid.uuid4())], "signature_id": str(uuid.uuid4())},
+        ),
+        409,
+        "invalid_transition",
+    )
     assert ok(post(s.ops, f"/shipments/{sh['id']}/reattempt"))["status"] == "in_transit"
 
 
@@ -420,7 +469,7 @@ def test_delay_is_a_flag_with_an_event(s: Setup, world: World) -> None:
 def test_completed_trip_correction_needs_permission_and_reason(s: Setup, world: World) -> None:
     sh, trip = dispatched(s)
     ok(post(s.driver, f"/trips/{trip['id']}/start"))
-    ok(post(s.driver, f"/shipments/{sh['id']}/deliver", {"recipient_name": "TEST Recipient"}))
+    ok(deliver(s.driver, sh["id"]))
     ok(post(s.driver, f"/trips/{trip['id']}/complete"))
     err(
         post(s.disp, f"/trips/{trip['id']}/corrections", {"to_status": "in_progress", "reason": "x"}),
