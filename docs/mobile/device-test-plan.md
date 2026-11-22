@@ -44,6 +44,8 @@ Record for every case: device, OS version, app build, date, tester, PASS/FAIL, n
 | D14 | Mock location | Enable a mock-location app (emulator: send fake GPS) | Mocked fixes are not recorded; the status card warns |
 | D15 | Battery use | 8 h trip on device A | Record battery drop per hour (target: under 6 %/h with screen off) |
 | D16 | Low accuracy indoors | Start inside a building | Points with accuracy > 100 m are stored but never become the vehicle's latest position on the map |
+| D17 | Proof of delivery (Phase 6) | On a started trip tap *Confirm delivery*, take a photo, sign on the pad, enter a name, confirm | Camera permission prompt shows the delivery-only text; the shipment becomes *delivered*; the photo and signature appear under Documents on the web shipment page and in the customer portal |
+| D18 | Proof of delivery without network | Same as D17 with airplane mode on, then *Try again* after reconnecting | First attempt shows *No network*, nothing is confirmed; the retry succeeds and creates exactly one photo, one signature and one delivery |
 
 ## Emulator script (device D)
 

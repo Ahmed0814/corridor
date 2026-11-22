@@ -482,8 +482,17 @@ $ npm run build       all 25 routes built, incl. /track/[token], /portal/shipmen
 ```
 Live (uvicorn :8000 + `next start` :3000, TEST demo tenant `livecheck`): `/track/<token>` 200 showing reference, status, route and milestones with `referrer=no-referrer` and `robots=noindex, nofollow`; unknown token 404; after revoking the link the same page 404; `/ops/geofences`, `/portal` and `/ops/documents/<id>` without a session redirect (307) to sign-in.
 
+### Driver app (done in code, 2026-11-22)
+- *Confirm delivery* on started trips: pick the in-transit shipment, take a photo (camera only, `expo-image-picker`), recipient signs on a pad, name, confirm. Upload photo, then signature, then deliver; each step's Idempotency-Key comes from one per-attempt key, so *Try again* never duplicates. Online only; nothing is confirmed until the server accepts it.
+```
+$ npm run lint          (no findings)
+$ npm run typecheck     (no errors)
+$ npm test              ℹ tests 35 · pass 35 · fail 0   (6 new in src/delivery.test.ts)
+$ npx expo-doctor       20/20 checks passed. No issues detected!
+```
+- Not yet run on a phone: device cases D17 (proof of delivery) and D18 (no network, then retry) were added to `docs/mobile/device-test-plan.md`. A person needs to run and sign them off.
+
 ### Remaining for Phase 6
-- Driver app: delivery photo and signature capture before confirming.
 - Signed-in browser walkthrough of the ops and portal screens (needs a local sign-in session; HTTP-level checks only so far).
 
 ---

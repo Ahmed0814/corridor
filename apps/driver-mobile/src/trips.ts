@@ -76,3 +76,43 @@ export function driverActions(status: string): TripAction[] {
       return [];
   }
 }
+
+// ---------------------------------------------------------------- proof of delivery (Phase 6)
+
+export type ShipmentSummary = { id: string; reference: string; status: string; destination_label: string };
+
+/** The trip's shipments as the API shows them to this driver (only shipments on their trips). */
+export async function tripShipments(trip: Trip): Promise<ShipmentSummary[]> {
+  const out: ShipmentSummary[] = [];
+  for (const id of trip.shipment_ids) {
+    out.push(await call<ShipmentSummary>("GET", `/shipments/${id}`));
+  }
+  return out;
+}
+
+/** POST with a caller-chosen Idempotency-Key; body is JSON or multipart FormData. Never throws on HTTP errors. */
+export async function sendWithKey(
+  method: "POST",
+  path: string,
+  body: unknown,
+  idempotencyKey: string,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const s = await session();
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${s.accessToken}`,
+    Accept: "application/json",
+    "Idempotency-Key": idempotencyKey,
+  };
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (!isForm) headers["Content-Type"] = "application/json";
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1${path}`, {
+      method,
+      headers,
+      body: isForm ? (body as FormData) : JSON.stringify(body ?? {}),
+    });
+    return { ok: response.ok, status: response.status, data: await response.json().catch(() => null) };
+  } catch {
+    return { ok: false, status: 0, data: { error: { code: "unreachable" } } };
+  }
+}

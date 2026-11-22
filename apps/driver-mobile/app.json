@@ -48,6 +48,14 @@
           "isAndroidForegroundServiceEnabled": true,
           "locationAlwaysAndWhenInUsePermission": "Corridor Driver shares your location with your company only while you are on an active trip, including when the app is in the background."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Corridor Driver uses the camera only to photograph a delivery as proof for your company.",
+          "photosPermission": false,
+          "microphonePermission": false
+        }
       ]
     ]
   }

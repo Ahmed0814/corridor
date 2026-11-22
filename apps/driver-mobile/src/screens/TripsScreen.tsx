@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { requestPermissions, startTracking, stopTracking } from "../tracking/control";
 import { syncIfDue } from "../tracking/runtime";
 import { driverActions, myTrips, type Trip, type TripAction, tripAction, TripApiError } from "../trips";
+import { DeliveryScreen } from "./DeliveryScreen";
 import { TrackingStatus } from "./TrackingStatus";
 
 const ACTION_LABEL = { start: "Start trip", pause: "Pause", resume: "Resume", complete: "Complete trip" } as const;
@@ -14,6 +15,7 @@ export function TripsScreen() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [delivering, setDelivering] = useState<Trip | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -72,6 +74,20 @@ export function TripsScreen() {
 
   const active = trips?.some((t) => t.status === "in_progress" || t.status === "paused") ?? false;
 
+
+  if (delivering) {
+    return (
+      <DeliveryScreen
+        trip={delivering}
+        onDone={(done) => {
+          setDelivering(null);
+          if (done) setMessage(done);
+          void load();
+        }}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TrackingStatus tripActive={active} />
@@ -97,6 +113,11 @@ export function TripsScreen() {
                 <Text style={styles.buttonText}>{ACTION_LABEL[a]}</Text>
               </Pressable>
             ))}
+            {trip.status === "in_progress" || trip.status === "paused" ? (
+              <Pressable disabled={busy} onPress={() => setDelivering(trip)} accessibilityRole="button" style={[styles.button, busy && styles.dim]}>
+                <Text style={styles.buttonText}>Confirm delivery</Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       ))}
