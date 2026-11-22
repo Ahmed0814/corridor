@@ -7,7 +7,7 @@ x-backend: &backend
   env_file: [/opt/corridor/secrets.env]
   environment: &backend-env
     DJANGO_ENV: ${environment}
-    DJANGO_ALLOWED_HOSTS: ${hostname},api,realtime,localhost
+    DJANGO_ALLOWED_HOSTS: ${hostname},api,realtime,localhost,127.0.0.1
     LOG_FORMAT: json
     AUTH_ISSUER_MODE: cognito
     COGNITO_ISSUER: ${cognito_issuer}
