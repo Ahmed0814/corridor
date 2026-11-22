@@ -80,8 +80,10 @@ locals {
     allowed_oauth_flows_user_pool_client = true
     allowed_oauth_flows                  = ["code"]
     allowed_oauth_scopes                 = ["openid", "email", "phone"]
-    supported_identity_providers         = ["COGNITO"]
-    explicit_auth_flows                  = ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_SRP_AUTH"]
+    # Web users set up their own authenticator app (D-073): AssociateSoftwareToken etc. need it.
+    web_oauth_scopes             = ["openid", "email", "phone", "aws.cognito.signin.user.admin"]
+    supported_identity_providers = ["COGNITO"]
+    explicit_auth_flows          = ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_SRP_AUTH"]
   }
 }
 
@@ -91,7 +93,7 @@ resource "aws_cognito_user_pool_client" "web_office" {
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = local.common.allowed_oauth_flows_user_pool_client
   allowed_oauth_flows                  = local.common.allowed_oauth_flows
-  allowed_oauth_scopes                 = local.common.allowed_oauth_scopes
+  allowed_oauth_scopes                 = local.common.web_oauth_scopes
   supported_identity_providers         = local.common.supported_identity_providers
   explicit_auth_flows                  = local.common.explicit_auth_flows
   callback_urls                        = ["${var.web_base_url}/auth/callback"]
@@ -114,7 +116,7 @@ resource "aws_cognito_user_pool_client" "web_portal" {
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = local.common.allowed_oauth_flows_user_pool_client
   allowed_oauth_flows                  = local.common.allowed_oauth_flows
-  allowed_oauth_scopes                 = local.common.allowed_oauth_scopes
+  allowed_oauth_scopes                 = local.common.web_oauth_scopes
   supported_identity_providers         = local.common.supported_identity_providers
   explicit_auth_flows                  = local.common.explicit_auth_flows
   callback_urls                        = ["${var.web_base_url}/auth/callback"]

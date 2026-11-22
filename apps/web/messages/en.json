@@ -56,7 +56,8 @@
       "finance": "Finance",
       "driver": "Driver",
       "customer": "Customer"
-    }
+    },
+    "mfaSetup": "Set up your authenticator app now."
   },
   "Ops": {
     "nav": {
@@ -422,6 +423,35 @@
       "delivered": "Delivered",
       "delivery_failed": "Delivery attempt failed",
       "cancelled": "Cancelled"
+    }
+  },
+  "Mfa": {
+    "title": "Set up your authenticator app",
+    "intro": "Your role needs two-step sign-in. You will add Corridor to an authenticator app on your phone, then enter the 6-digit code it shows.",
+    "start": "Start setup",
+    "scan": "Open your authenticator app, choose “Add account” and scan this QR code.",
+    "qrAlt": "QR code for the authenticator app",
+    "manual": "Cannot scan? Enter this key manually (time-based):",
+    "openOnPhone": "On this phone? Open in the authenticator app",
+    "enterCode": "Enter the 6-digit code from the app:",
+    "verify": "Verify and turn on",
+    "done": "Authenticator app is set up.",
+    "doneNext": "Sign out and sign in again. From now on Cognito asks for a code from the app after your password.",
+    "signInAgain": "Sign out and sign in again",
+    "signInFirst": "Sign in first, then come back to this page.",
+    "signIn": "Sign in",
+    "alreadyOn": "Two-step sign-in is already on for your account.",
+    "localNote": "Local development: tick “TOTP MFA enrolled” on the development sign-in page instead.",
+    "apps": "Works with Google Authenticator, Microsoft Authenticator, 1Password, Authy and other TOTP apps.",
+    "errors": {
+      "invalid_code": "Enter the 6 digits shown in the app.",
+      "CodeMismatchException": "That code did not match. Wait for the next code and try again.",
+      "EnableSoftwareTokenMFAException": "That code did not match. Wait for the next code and try again.",
+      "NotAuthorizedException": "Your session cannot change sign-in settings. Sign out, sign in again, then retry.",
+      "unauthenticated": "Your session has ended. Sign in again.",
+      "local_issuer": "Not available with the local development sign-in.",
+      "unreachable": "Could not reach the sign-in service. Try again.",
+      "generic": "Setup failed ({code}). Try again."
     }
   }
 }

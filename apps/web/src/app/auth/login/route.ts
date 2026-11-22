@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { type Area, AREAS, authConfig, clientForArea, COOKIES, redirectUri, safeNext } from "@/lib/auth/config";
+import { ACCOUNT_SCOPE } from "@/lib/auth/mfa";
 import { codeChallenge, randomToken } from "@/lib/auth/pkce";
 
 /** Start sign-in: remember state + PKCE verifier in a short-lived HttpOnly cookie, then go to
@@ -19,7 +20,8 @@ export async function GET(request: NextRequest) {
     response_type: "code",
     client_id: config.clientIds[client],
     redirect_uri: redirectUri(config),
-    scope: "openid email phone",
+    // aws.cognito.signin.user.admin lets the user set up their own authenticator (D-073).
+    scope: `openid email phone ${ACCOUNT_SCOPE}`,
     state,
     code_challenge: await codeChallenge(verifier),
     code_challenge_method: "S256",

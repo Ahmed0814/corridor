@@ -102,7 +102,10 @@ export async function AreaLayout({ area, title, children }: { area: Area; title:
     <AreaShell title={title} scope={area} actions={actions}>
       {me.mfa_required ? (
         <div role="alert" className="mb-6 rounded-lg border border-amber-500/60 p-4 text-sm" data-mfa="required">
-          {t("mfaRequired")}
+          {t("mfaRequired")}{" "}
+          <a href="/account/mfa" className="font-medium underline underline-offset-4">
+            {t("mfaSetup")}
+          </a>
         </div>
       ) : null}
       {area === "admin" && !me.mfa_verified ? (

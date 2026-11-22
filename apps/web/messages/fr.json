@@ -56,7 +56,8 @@
       "finance": "Finance",
       "driver": "Chauffeur",
       "customer": "Client"
-    }
+    },
+    "mfaSetup": "Configurer l’application d’authentification maintenant."
   },
   "Ops": {
     "nav": {
@@ -422,6 +423,35 @@
       "delivered": "Livrée",
       "delivery_failed": "Échec de livraison",
       "cancelled": "Annulée"
+    }
+  },
+  "Mfa": {
+    "title": "Configurer votre application d’authentification",
+    "intro": "Votre rôle exige une connexion en deux étapes. Vous allez ajouter Corridor à une application d’authentification sur votre téléphone, puis saisir le code à 6 chiffres affiché.",
+    "start": "Commencer",
+    "scan": "Ouvrez votre application d’authentification, choisissez « Ajouter un compte » et scannez ce QR code.",
+    "qrAlt": "QR code pour l’application d’authentification",
+    "manual": "Impossible de scanner ? Saisissez cette clé manuellement (basée sur le temps) :",
+    "openOnPhone": "Sur ce téléphone ? Ouvrir dans l’application d’authentification",
+    "enterCode": "Saisissez le code à 6 chiffres de l’application :",
+    "verify": "Vérifier et activer",
+    "done": "L’application d’authentification est configurée.",
+    "doneNext": "Déconnectez-vous puis reconnectez-vous. Désormais, Cognito demande un code de l’application après le mot de passe.",
+    "signInAgain": "Se déconnecter et se reconnecter",
+    "signInFirst": "Connectez-vous d’abord, puis revenez sur cette page.",
+    "signIn": "Se connecter",
+    "alreadyOn": "La connexion en deux étapes est déjà active pour votre compte.",
+    "localNote": "Développement local : cochez plutôt « TOTP MFA enrolled » sur la page de connexion de développement.",
+    "apps": "Fonctionne avec Google Authenticator, Microsoft Authenticator, 1Password, Authy et d’autres applications TOTP.",
+    "errors": {
+      "invalid_code": "Saisissez les 6 chiffres affichés dans l’application.",
+      "CodeMismatchException": "Ce code ne correspond pas. Attendez le code suivant et réessayez.",
+      "EnableSoftwareTokenMFAException": "Ce code ne correspond pas. Attendez le code suivant et réessayez.",
+      "NotAuthorizedException": "Votre session ne peut pas modifier les paramètres de connexion. Déconnectez-vous, reconnectez-vous, puis réessayez.",
+      "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+      "local_issuer": "Non disponible avec la connexion de développement locale.",
+      "unreachable": "Le service de connexion est injoignable. Réessayez.",
+      "generic": "Échec de la configuration ({code}). Réessayez."
     }
   }
 }
