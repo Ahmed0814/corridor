@@ -51,6 +51,17 @@ export async function createCustomer(form: FormData): Promise<void> {
   finish(await apiSend("POST", "/customers", body, key(form)), "/ops/customers");
 }
 
+export async function createContainer(form: FormData): Promise<void> {
+  const body = {
+    number: text(form, "number").toUpperCase().replace(/\s+/g, ""),
+    size_ft: Number(text(form, "size_ft")),
+    iso_type: text(form, "iso_type").toUpperCase(),
+    owner: text(form, "owner"),
+    condition: text(form, "condition") || "good",
+  };
+  finish(await apiSend("POST", "/containers", body, key(form)), "/ops/containers");
+}
+
 export async function createShipment(form: FormData): Promise<void> {
   const weight = text(form, "weight_kg");
   const body = {

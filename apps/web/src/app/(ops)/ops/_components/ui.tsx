@@ -29,6 +29,7 @@ const NAV = [
   { href: "/ops/shipments", key: "shipments" },
   { href: "/ops/dispatch", key: "dispatch" },
   { href: "/ops/map", key: "map" },
+  { href: "/ops/containers", key: "containers" },
   { href: "/ops/fleet", key: "fleet" },
   { href: "/ops/customers", key: "customers" },
   { href: "/ops/geofences", key: "geofences" },

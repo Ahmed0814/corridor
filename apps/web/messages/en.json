@@ -67,7 +67,8 @@
       "customers": "Customers",
       "map": "Live map",
       "geofences": "Geofences",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "containers": "Containers"
     },
     "common": {
       "create": "Create",
@@ -105,7 +106,11 @@
       "aborted": "Aborted",
       "link_active": "Active",
       "link_expired": "Expired",
-      "link_revoked": "Revoked"
+      "link_revoked": "Revoked",
+      "available": "Available",
+      "in_use": "In use",
+      "maintenance": "Maintenance",
+      "retired": "Retired"
     },
     "shipments": {
       "title": "Shipments",
@@ -296,6 +301,23 @@
         "depot": "Depot",
         "customer_site": "Customer site",
         "checkpoint": "Checkpoint"
+      }
+    },
+    "containers": {
+      "title": "Containers",
+      "new": "Register a container",
+      "number": "Container number",
+      "numberHint": "ISO 6346: 4 letters + 7 digits, e.g. MSCU1234565 (the last digit is checked).",
+      "size": "Size",
+      "isoType": "ISO type code",
+      "owner": "Owner",
+      "condition": "Condition",
+      "availability": "Availability",
+      "create": "Register container",
+      "conditions": {
+        "good": "Good",
+        "damaged": "Damaged",
+        "needs_repair": "Needs repair"
       }
     }
   },

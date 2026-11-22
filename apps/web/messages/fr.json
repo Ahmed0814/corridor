@@ -67,7 +67,8 @@
       "customers": "Clients",
       "map": "Carte en direct",
       "geofences": "Géorepérages",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "containers": "Conteneurs"
     },
     "common": {
       "create": "Créer",
@@ -105,7 +106,11 @@
       "aborted": "Interrompu",
       "link_active": "Actif",
       "link_expired": "Expiré",
-      "link_revoked": "Révoqué"
+      "link_revoked": "Révoqué",
+      "available": "Disponible",
+      "in_use": "En service",
+      "maintenance": "Maintenance",
+      "retired": "Retiré"
     },
     "shipments": {
       "title": "Expéditions",
@@ -296,6 +301,23 @@
         "depot": "Dépôt",
         "customer_site": "Site client",
         "checkpoint": "Point de contrôle"
+      }
+    },
+    "containers": {
+      "title": "Conteneurs",
+      "new": "Enregistrer un conteneur",
+      "number": "Numéro de conteneur",
+      "numberHint": "ISO 6346 : 4 lettres + 7 chiffres, ex. MSCU1234565 (le dernier chiffre est contrôlé).",
+      "size": "Taille",
+      "isoType": "Code type ISO",
+      "owner": "Propriétaire",
+      "condition": "État",
+      "availability": "Disponibilité",
+      "create": "Enregistrer le conteneur",
+      "conditions": {
+        "good": "Bon",
+        "damaged": "Endommagé",
+        "needs_repair": "À réparer"
       }
     }
   },
