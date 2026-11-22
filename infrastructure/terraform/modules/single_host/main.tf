@@ -287,7 +287,7 @@ resource "aws_iam_role_policy_attachment" "dlm" {
 }
 
 resource "aws_dlm_lifecycle_policy" "daily" {
-  description        = "${var.name} daily snapshots, 7 days"
+  description        = "${var.name} daily snapshots kept 7 days"
   execution_role_arn = aws_iam_role.dlm.arn
   state              = "ENABLED"
   policy_details {
