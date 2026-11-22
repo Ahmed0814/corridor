@@ -70,7 +70,8 @@
       "geofences": "Geofences",
       "notifications": "Notifications",
       "containers": "Containers",
-      "team": "Team"
+      "team": "Team",
+      "trips": "Trips"
     },
     "common": {
       "create": "Create",
@@ -357,6 +358,32 @@
         "finance": "Finance",
         "driver": "Driver",
         "customer": "Customer (portal)"
+      }
+    },
+    "trips": {
+      "title": "Trips",
+      "description": "Trips created by Dispatch. Open a trip to start, pause or complete it for the driver.",
+      "reference": "Trip",
+      "truck": "Truck",
+      "driver": "Driver",
+      "started": "Started",
+      "completed": "Completed",
+      "empty": "No trips yet. Confirm a shipment, then use Dispatch.",
+      "detail": "Trip",
+      "truckDriver": "Truck · driver",
+      "notAssigned": "Not assigned",
+      "shipments": "Shipments",
+      "history": "Trip history",
+      "reason": "Reason (required)",
+      "onBehalfNote": "You are acting for the driver: a reason is required and the action is recorded under your name. Live GPS positions come only from the driver app; starting the trip here opens tracking but no positions arrive until the driver app sends them.",
+      "actions": {
+        "start": "Start trip",
+        "pause": "Pause",
+        "resume": "Resume",
+        "complete": "Complete trip",
+        "cancel": "Cancel trip",
+        "abort": "Abort trip",
+        "unassign": "Unassign truck and driver"
       }
     }
   },

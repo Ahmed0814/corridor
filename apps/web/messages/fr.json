@@ -70,7 +70,8 @@
       "geofences": "Géorepérages",
       "notifications": "Notifications",
       "containers": "Conteneurs",
-      "team": "Équipe"
+      "team": "Équipe",
+      "trips": "Trajets"
     },
     "common": {
       "create": "Créer",
@@ -357,6 +358,32 @@
         "finance": "Finance",
         "driver": "Chauffeur",
         "customer": "Client (portail)"
+      }
+    },
+    "trips": {
+      "title": "Trajets",
+      "description": "Trajets créés par la répartition. Ouvrez un trajet pour le démarrer, le mettre en pause ou le terminer pour le chauffeur.",
+      "reference": "Trajet",
+      "truck": "Camion",
+      "driver": "Chauffeur",
+      "started": "Démarré",
+      "completed": "Terminé",
+      "empty": "Aucun trajet. Confirmez une expédition, puis utilisez la répartition.",
+      "detail": "Trajet",
+      "truckDriver": "Camion · chauffeur",
+      "notAssigned": "Non affecté",
+      "shipments": "Expéditions",
+      "history": "Historique du trajet",
+      "reason": "Motif (obligatoire)",
+      "onBehalfNote": "Vous agissez pour le chauffeur : un motif est obligatoire et l’action est enregistrée à votre nom. Les positions GPS en direct viennent uniquement de l’application chauffeur ; démarrer le trajet ici ouvre le suivi, mais aucune position n’arrive tant que l’application ne les envoie pas.",
+      "actions": {
+        "start": "Démarrer le trajet",
+        "pause": "Pause",
+        "resume": "Reprendre",
+        "complete": "Terminer le trajet",
+        "cancel": "Annuler le trajet",
+        "abort": "Interrompre le trajet",
+        "unassign": "Retirer camion et chauffeur"
       }
     }
   },
