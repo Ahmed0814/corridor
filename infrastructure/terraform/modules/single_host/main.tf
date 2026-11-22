@@ -90,14 +90,14 @@ resource "aws_vpc_security_group_ingress_rule" "http" {
   ip_protocol       = "tcp"
   from_port         = 80
   to_port           = 80
-  description       = "HTTP: Let's Encrypt challenge and redirect to HTTPS"
+  description       = "HTTP for ACME challenge and redirect to HTTPS"
 }
 
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.host.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
-  description       = "Image pulls, OS updates, Cognito, Let's Encrypt"
+  description       = "Image pulls, OS updates, Cognito, ACME"
 }
 
 locals {
@@ -258,7 +258,9 @@ resource "aws_instance" "host" {
   tags = { Name = var.name }
 
   lifecycle {
-    ignore_changes = [ami, user_data_base64] # no surprise replacement when AL2023 or config updates
+    # No surprise replacement: AMI or config updates, and AWS reporting the attached Elastic IP as a
+    # public address (associate_public_ip_address reads true once the EIP is associated).
+    ignore_changes = [ami, user_data_base64, associate_public_ip_address]
   }
 }
 

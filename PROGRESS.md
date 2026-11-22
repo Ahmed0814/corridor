@@ -9,7 +9,7 @@
 | 4 GPS tracking | **Done**: CI green on `06f3395` (run 44960946917), all 5 jobs | 2026-11-21 |
 | 5 Driver app & offline | **Code done, CI green on `d3e15b3` (run 44962750043). Emulator runs and human device sign-off pending** | 2026-11-21 |
 | 6 Customer & operations | **In progress**: backend CI green on `9811e0f` (run 45003627368); web screens done locally; driver-app delivery capture next | 2026-11-22 |
-| 7 Infrastructure & deployment | **In progress**: test environment (single host, ca-central-1, ~$19/month) written and validated locally; **nothing applied** | 2026-11-22 |
+| 7 Infrastructure & deployment | **In progress**: test environment **live** at https://99-79-154-201.sslip.io (single host, ca-central-1, ~$19/month); backup/restore drill pending | 2026-11-22 |
 | 8 Final verification | Not started | — |
 
 ---
@@ -515,9 +515,24 @@ Django boots with the test-environment settings: env staging | debug False | iss
 ### Applied (owner approved, 2026-11-22)
 - **Bootstrap** in account 069176180438, ca-central-1: `Apply complete! Resources: 7 added, 0 changed, 0 destroyed.` Bucket `corridor-tfstate-069176180438-ca-central-1` checked with the AWS CLI: versioning Enabled; public access block True ×4; encryption AES256; region ca-central-1. Bootstrap state is local (git-ignored) in `environments/bootstrap/`.
 
+- **Images** (CI run 45009004431 green, publish-images run 45009365557): `corridor-backend@sha256:f50f4c6a…4e69`, `corridor-web@sha256:3d69cf76…dd30`, both linux/arm64, public on ghcr.io.
+- **Test environment** (owner approved the 40-resource plan): first apply created 38; two security-group rules failed (`InvalidParameterValue: Invalid rule description`: an apostrophe). Descriptions fixed; a false instance replacement (`associate_public_ip_address` reads true once the EIP is attached) suppressed with `ignore_changes`; then `Apply complete! Resources: 2 added, 0 changed, 0 destroyed.`
+- First boot: `compose build requires buildx 0.17 or later` (Amazon Linux Docker has no buildx). Fixed on the host through SSM (PostGIS image built with the classic builder, compose uses the local image) and in the templates for future rebuilds.
+- Follow-up plan: `No changes. Your infrastructure matches the configuration.`
+
+### Smoke test from the internet (2026-11-22)
+```
+GET  https://99-79-154-201.sslip.io/healthz/ready  200 {"status": "ok", "checks": {"database": true, "redis": true}}
+TLS  issuer=C=US, O=Let's Encrypt, CN=YE1   notAfter=Feb 20 09:12:49 2027 GMT
+GET  http://…/                                       308 -> https://99-79-154-201.sslip.io/
+GET  /status 200 · /api/v1/meta 200 · /ops (signed out) 307 · /track/<unknown> 404
+GET  /auth/login?area=ops                            307 -> Cognito hosted UI (200)
+TCP  22 closed · 5432 closed
+```
+
 ### Waiting for
-- Push, then the arm64 image build; GHCR packages set to public.
-- **Approval** of the test environment plan (no `terraform apply` without it).
+- First company + owner (Cognito sends a real invitation email: needs the owner's go-ahead).
+- Signed-in walkthrough; backup/restore drill (Phase 7 Done-when).
 - After apply: smoke test, then one backup/restore drill (Phase 7 Done-when).
 
 ---

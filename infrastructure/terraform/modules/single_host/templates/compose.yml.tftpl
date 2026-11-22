@@ -47,9 +47,9 @@ x-backend: &backend
 services:
   db:
     # postgis/postgis has no arm64 build: official postgres:16 + PostGIS from the PGDG apt repo,
-    # built on the host (Dockerfile written at boot).
-    build: /opt/corridor/postgis
+    # built on the host with plain `docker build` at boot (compose build would need buildx).
     image: corridor-postgis:16
+    pull_policy: never
     env_file: [/opt/corridor/db.env]
     environment:
       POSTGRES_DB: corridor

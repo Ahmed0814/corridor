@@ -46,6 +46,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 DOCKERFILE
 
+# Local PostGIS image (the classic builder: Amazon Linux's Docker has no buildx plugin).
+DOCKER_BUILDKIT=0 docker build -q -t corridor-postgis:16 /opt/corridor/postgis
+
 # --- secrets from SSM (SecureString, decrypted with the instance role) ------------------------
 param() {
   aws ssm get-parameter --region "$REGION" --with-decryption --name "$PREFIX/$1" \
@@ -89,7 +92,7 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/corridor
-ExecStart=/usr/bin/docker compose -f /opt/corridor/compose.yml up -d --build --remove-orphans
+ExecStart=/usr/bin/docker compose -f /opt/corridor/compose.yml up -d --remove-orphans
 ExecStop=/usr/bin/docker compose -f /opt/corridor/compose.yml down
 TimeoutStartSec=1200
 
