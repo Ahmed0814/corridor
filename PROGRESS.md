@@ -512,9 +512,12 @@ Django boots with the test-environment settings: env staging | debug False | iss
   docs local | email sending False | secure cookies True
 ```
 
+### Applied (owner approved, 2026-11-22)
+- **Bootstrap** in account 069176180438, ca-central-1: `Apply complete! Resources: 7 added, 0 changed, 0 destroyed.` Bucket `corridor-tfstate-069176180438-ca-central-1` checked with the AWS CLI: versioning Enabled; public access block True ×4; encryption AES256; region ca-central-1. Bootstrap state is local (git-ignored) in `environments/bootstrap/`.
+
 ### Waiting for
-- AWS account id and an alert email; GHCR packages set to public after the first image build.
-- **Approval** of the bootstrap plan, then of the test plan (no `terraform apply` without it).
+- Push, then the arm64 image build; GHCR packages set to public.
+- **Approval** of the test environment plan (no `terraform apply` without it).
 - After apply: smoke test, then one backup/restore drill (Phase 7 Done-when).
 
 ---

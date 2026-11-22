@@ -44,3 +44,5 @@ Thumbs.db
 backend/staticfiles/
 backend/.gps-archive/
 backend/.documents/
+*.plan
+*.tfplan
