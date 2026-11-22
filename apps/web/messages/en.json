@@ -307,7 +307,7 @@
       "title": "Containers",
       "new": "Register a container",
       "number": "Container number",
-      "numberHint": "ISO 6346: 4 letters + 7 digits, e.g. MSCU1234565 (the last digit is checked).",
+      "numberHint": "ISO 6346: 4 letters + 7 digits, e.g. MSCU1234566 (the last digit is checked).",
       "size": "Size",
       "isoType": "ISO type code",
       "owner": "Owner",

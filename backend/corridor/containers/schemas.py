@@ -15,7 +15,7 @@ class _In(Schema):
 
 
 class ContainerIn(_In):
-    number: str = Field(min_length=11, max_length=13, description="ISO 6346, e.g. MSCU1234565")
+    number: str = Field(min_length=11, max_length=13, description="ISO 6346, e.g. MSCU1234566")
     iso_type: str = Field(default="", max_length=4)
     size_ft: Literal[10, 20, 40, 45]
     owner: str = Field(default="", max_length=200)

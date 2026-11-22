@@ -307,7 +307,7 @@
       "title": "Conteneurs",
       "new": "Enregistrer un conteneur",
       "number": "Numéro de conteneur",
-      "numberHint": "ISO 6346 : 4 lettres + 7 chiffres, ex. MSCU1234565 (le dernier chiffre est contrôlé).",
+      "numberHint": "ISO 6346 : 4 lettres + 7 chiffres, ex. MSCU1234566 (le dernier chiffre est contrôlé).",
       "size": "Taille",
       "isoType": "Code type ISO",
       "owner": "Propriétaire",

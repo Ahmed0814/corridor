@@ -84,7 +84,7 @@ export default async function ContainersPage({ searchParams }: PageProps<"/ops/c
               required
               minLength={11}
               maxLength={13}
-              placeholder="MSCU1234565"
+              placeholder="MSCU1234566"
               autoCapitalize="characters"
               className={`${inputClass} font-mono uppercase`}
             />
