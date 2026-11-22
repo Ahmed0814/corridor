@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import type { ApiResult } from "@/lib/api";
 import { COOKIES } from "@/lib/auth/config";
+import { invalidFields } from "@/lib/forms";
 
 function apiBase(): string {
   const base = process.env.API_INTERNAL_URL;
@@ -13,7 +14,7 @@ function apiBase(): string {
 }
 
 function toError(status: number, data: unknown, response: Response): ApiResult<never> {
-  const error = (data as { error?: { code?: string; message?: string; request_id?: string } } | null)?.error;
+  const error = (data as { error?: { code?: string; message?: string; request_id?: string; details?: unknown } } | null)?.error;
   return {
     ok: false,
     status,
@@ -21,6 +22,7 @@ function toError(status: number, data: unknown, response: Response): ApiResult<n
       code: error?.code ?? "error",
       message: error?.message ?? "",
       requestId: error?.request_id ?? response.headers.get("x-request-id"),
+      fields: invalidFields(error?.details),
     },
   };
 }

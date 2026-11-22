@@ -32,7 +32,11 @@ export default async function Notifications({ searchParams }: PageProps<"/ops/no
           </form>
         ) : null}
       </div>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       {!page.ok ? (
         <ActionError code={page.error.code} requestId={page.error.requestId ?? undefined} />
       ) : page.data.items.length === 0 ? (

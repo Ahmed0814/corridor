@@ -39,7 +39,11 @@ export default async function ShipmentsPage({ searchParams }: PageProps<"/ops/sh
     <section>
       <OpsNav current="shipments" />
       <h1 className="text-xl font-semibold">{t("shipments.title")}</h1>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
 
       <form className="mt-4 flex flex-wrap items-end gap-2" role="search">
         <Field label={t("shipments.reference")}>

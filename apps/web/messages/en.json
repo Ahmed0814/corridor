@@ -191,7 +191,28 @@
     },
     "errors": {
       "generic": "The action failed.",
-      "reference": "Reference: {id}"
+      "reference": "Reference: {id}",
+      "checkFields": "Check: {fields}",
+      "field": {
+        "phone_e164": "Phone (international format, e.g. +25377123456)",
+        "email": "Email",
+        "name": "Name",
+        "number": "Container number",
+        "size_ft": "Size",
+        "plate": "Plate",
+        "full_name": "Full name",
+        "license_number": "Licence number",
+        "origin_label": "Origin",
+        "destination_label": "Destination",
+        "weight_kg": "Weight",
+        "reason": "Reason",
+        "radius_m": "Radius",
+        "lat": "Latitude",
+        "lng": "Longitude",
+        "recipient_name": "Recipient name",
+        "role": "Role",
+        "customer_id": "Customer"
+      }
     },
     "map": {
       "title": "Live map",

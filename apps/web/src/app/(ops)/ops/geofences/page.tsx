@@ -32,7 +32,11 @@ export default async function Geofences({ searchParams }: PageProps<"/ops/geofen
       <OpsNav current="geofences" />
       <h1 className="text-xl font-semibold">{t("title")}</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("description")}</p>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       {!fences.ok ? <ActionError code={fences.error.code} requestId={fences.error.requestId ?? undefined} /> : null}
 
       <table className="mt-4 w-full text-sm">

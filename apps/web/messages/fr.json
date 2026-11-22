@@ -191,7 +191,28 @@
     },
     "errors": {
       "generic": "L’action a échoué.",
-      "reference": "Référence : {id}"
+      "reference": "Référence : {id}",
+      "checkFields": "Vérifiez : {fields}",
+      "field": {
+        "phone_e164": "Téléphone (format international, ex. +25377123456)",
+        "email": "E-mail",
+        "name": "Nom",
+        "number": "Numéro de conteneur",
+        "size_ft": "Taille",
+        "plate": "Immatriculation",
+        "full_name": "Nom complet",
+        "license_number": "Numéro de permis",
+        "origin_label": "Origine",
+        "destination_label": "Destination",
+        "weight_kg": "Poids",
+        "reason": "Motif",
+        "radius_m": "Rayon",
+        "lat": "Latitude",
+        "lng": "Longitude",
+        "recipient_name": "Nom du destinataire",
+        "role": "Rôle",
+        "customer_id": "Client"
+      }
     },
     "map": {
       "title": "Carte en direct",

@@ -7,8 +7,9 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { type ApiResult, apiSend } from "@/lib/api";
+import { type ApiError, type ApiResult, apiSend } from "@/lib/api";
 import { apiUpload } from "@/lib/api-files";
+import { errorQuery } from "@/lib/forms";
 import { type DocumentInfo, LINK_FIELDS, type TrackingLinkCreated, trackingUrl } from "@/lib/phase6";
 
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -23,10 +24,8 @@ function key(form: FormData): string {
   return /^[A-Za-z0-9._:-]{8,100}$/.test(k) ? k : crypto.randomUUID();
 }
 
-function fail(back: string, result: { error: { code: string; requestId: string | null } }): never {
-  const q = new URLSearchParams({ error: result.error.code });
-  if (result.error.requestId) q.set("ref", result.error.requestId);
-  redirect(`${back}?${q.toString()}`);
+function fail(back: string, result: { error: ApiError }): never {
+  redirect(`${back}?${errorQuery(result.error)}`);
 }
 
 function finish<T>(result: ApiResult<T>, back: string): never {

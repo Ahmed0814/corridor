@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { type ApiResult, apiSend } from "@/lib/api";
+import { errorQuery } from "@/lib/forms";
 import { ROLES } from "@/lib/team";
 
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -24,9 +25,7 @@ function key(form: FormData): string {
 
 function finish<T>(result: ApiResult<T>, success?: string): never {
   if (!result.ok) {
-    const q = new URLSearchParams({ error: result.error.code });
-    if (result.error.requestId) q.set("ref", result.error.requestId);
-    redirect(`${BACK}?${q.toString()}`);
+    redirect(`${BACK}?${errorQuery(result.error)}`);
   }
   revalidatePath(BACK);
   redirect(success ? `${BACK}?done=${success}` : BACK);

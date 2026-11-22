@@ -18,7 +18,11 @@ export default async function TripsPage({ searchParams }: PageProps<"/ops/trips"
       <OpsNav current="trips" />
       <h1 className="text-xl font-semibold">{t("trips.title")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t("trips.description")}</p>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       {!trips.ok ? <ActionError code={trips.error.code} requestId={trips.error.requestId ?? undefined} /> : null}
       <div className="mt-4 overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">

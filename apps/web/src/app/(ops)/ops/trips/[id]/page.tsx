@@ -51,7 +51,11 @@ export default async function TripDetail({ params, searchParams }: PageProps<"/o
         </h1>
         <StatusBadge status={tr.status} />
       </div>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
 
       <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         <div>

@@ -58,14 +58,30 @@ export async function OpsNav({ current }: { current: (typeof NAV)[number]["key"]
 }
 
 /** Error from a server action, passed back as ?error=<code>&ref=<request id>. */
-export async function ActionError({ code, requestId }: { code?: string; requestId?: string }) {
+export async function ActionError({
+  code,
+  requestId,
+  fields,
+}: {
+  code?: string;
+  requestId?: string;
+  fields?: string;
+}) {
   if (!code) return null;
   const t = await getTranslations("Ops.errors");
+  const fieldList = (fields ?? "").split(",").filter((f) => /^[a-z_][a-z0-9_]*$/i.test(f)).slice(0, 5);
   return (
     <div role="alert" className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
       <p className="font-medium">
         {t("generic")} <code className="ms-1">{code}</code>
       </p>
+      {fieldList.length > 0 ? (
+        <p className="mt-1">
+          {t("checkFields", {
+            fields: fieldList.map((f) => (t.has(`field.${f}`) ? t(`field.${f}`) : f)).join(", "),
+          })}
+        </p>
+      ) : null}
       {requestId ? <p className="mt-1 text-muted-foreground">{t("reference", { id: requestId })}</p> : null}
     </div>
   );

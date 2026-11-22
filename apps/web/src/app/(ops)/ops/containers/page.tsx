@@ -32,7 +32,11 @@ export default async function ContainersPage({ searchParams }: PageProps<"/ops/c
     <section>
       <OpsNav current="containers" />
       <h1 className="text-xl font-semibold">{t("containers.title")}</h1>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       {!containers.ok ? (
         <ActionError code={containers.error.code} requestId={containers.error.requestId ?? undefined} />
       ) : null}

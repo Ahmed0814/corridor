@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { type ApiResult, apiSend } from "@/lib/api";
+import { errorQuery, normalizePhone } from "@/lib/forms";
 import { actionBody, type ShipmentAction } from "@/lib/logistics";
 
 const SHIPMENT_ACTIONS = new Set<ShipmentAction>([
@@ -38,16 +39,14 @@ function safePath(path: string, fallback: string): string {
 
 function finish<T>(result: ApiResult<T>, back: string, success?: string): never {
   if (!result.ok) {
-    const q = new URLSearchParams({ error: result.error.code });
-    if (result.error.requestId) q.set("ref", result.error.requestId);
-    redirect(`${back}?${q.toString()}`);
+    redirect(`${back}?${errorQuery(result.error)}`);
   }
   revalidatePath("/ops", "layout");
   redirect(success ?? back);
 }
 
 export async function createCustomer(form: FormData): Promise<void> {
-  const body = { name: text(form, "name"), email: text(form, "email"), phone_e164: text(form, "phone_e164") };
+  const body = { name: text(form, "name"), email: text(form, "email"), phone_e164: normalizePhone(text(form, "phone_e164")) };
   finish(await apiSend("POST", "/customers", body, key(form)), "/ops/customers");
 }
 
@@ -116,7 +115,7 @@ export async function createDriver(form: FormData): Promise<void> {
   const expiry = text(form, "license_expiry");
   const body = {
     full_name: text(form, "full_name"),
-    phone_e164: text(form, "phone_e164"),
+    phone_e164: normalizePhone(text(form, "phone_e164")),
     license_number: text(form, "license_number"),
     license_expiry: expiry || null,
   };

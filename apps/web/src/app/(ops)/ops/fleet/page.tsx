@@ -31,7 +31,11 @@ export default async function FleetPage({ searchParams }: PageProps<"/ops/fleet"
     <section>
       <OpsNav current="fleet" />
       <h1 className="text-xl font-semibold">{t("fleet.title")}</h1>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
 
       <h2 className="mt-6 text-base font-semibold">{t("fleet.vehicles")}</h2>
       <div className="mt-2 overflow-x-auto rounded-lg border">
@@ -127,7 +131,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/ops/fleet"
             <input name="full_name" required className={inputClass} />
           </Field>
           <Field label={t("fleet.phone")}>
-            <input name="phone_e164" placeholder="+253…" className={inputClass} />
+            <input name="phone_e164" placeholder="+25377123456" className={inputClass} />
           </Field>
           <Field label={t("fleet.license")}>
             <input name="license_number" className={inputClass} autoComplete="off" />

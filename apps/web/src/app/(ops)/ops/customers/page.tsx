@@ -26,7 +26,11 @@ export default async function CustomersPage({ searchParams }: PageProps<"/ops/cu
     <section>
       <OpsNav current="customers" />
       <h1 className="text-xl font-semibold">{t("customers.title")}</h1>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       <div className="mt-4 overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
@@ -61,7 +65,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/ops/cu
             <input name="email" type="email" className={inputClass} />
           </Field>
           <Field label={t("customers.phone")}>
-            <input name="phone_e164" placeholder="+253…" className={inputClass} />
+            <input name="phone_e164" placeholder="+25377123456" className={inputClass} />
           </Field>
           <button type="submit" className={buttonClass}>
             {t("customers.new")}

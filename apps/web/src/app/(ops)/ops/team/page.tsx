@@ -55,7 +55,11 @@ export default async function TeamPage({ searchParams }: PageProps<"/ops/team">)
       <OpsNav current="team" />
       <h1 className="text-xl font-semibold">{t("team.title")}</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("team.description")}</p>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
       {done === "invited" ? (
         <p role="status" className="mt-3 rounded-md border border-emerald-500/40 p-3 text-sm">
           {t("team.invited")}

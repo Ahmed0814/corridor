@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { COOKIES } from "@/lib/auth/config";
+import { invalidFields } from "@/lib/forms";
 
 /** Response of GET /api/v1/me. Roles and companies come from the API, never from the token. */
 export type Membership = {
@@ -25,7 +26,7 @@ export type Me = {
   memberships: Membership[];
 };
 
-export type ApiError = { code: string; message: string; requestId: string | null };
+export type ApiError = { code: string; message: string; requestId: string | null; fields?: string[] };
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiError };
 
 function apiBase(): string {
@@ -50,7 +51,7 @@ export async function apiGet<T>(path: string): Promise<ApiResult<T>> {
     });
     const body: unknown = await response.json().catch(() => null);
     if (response.ok) return { ok: true, data: body as T };
-    const error = (body as { error?: { code?: string; message?: string; request_id?: string } } | null)?.error;
+    const error = (body as { error?: { code?: string; message?: string; request_id?: string; details?: unknown } } | null)?.error;
     return {
       ok: false,
       status: response.status,
@@ -58,6 +59,7 @@ export async function apiGet<T>(path: string): Promise<ApiResult<T>> {
         code: error?.code ?? "error",
         message: error?.message ?? "",
         requestId: error?.request_id ?? response.headers.get("x-request-id"),
+        fields: invalidFields(error?.details),
       },
     };
   } catch {
@@ -95,7 +97,7 @@ export async function apiSend<T>(
     });
     const data: unknown = await response.json().catch(() => null);
     if (response.ok) return { ok: true, data: data as T };
-    const error = (data as { error?: { code?: string; message?: string; request_id?: string } } | null)?.error;
+    const error = (data as { error?: { code?: string; message?: string; request_id?: string; details?: unknown } } | null)?.error;
     return {
       ok: false,
       status: response.status,
@@ -103,6 +105,7 @@ export async function apiSend<T>(
         code: error?.code ?? "error",
         message: error?.message ?? "",
         requestId: error?.request_id ?? response.headers.get("x-request-id"),
+        fields: invalidFields(error?.details),
       },
     };
   } catch {

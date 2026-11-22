@@ -27,7 +27,11 @@ export default async function DispatchPage({ searchParams }: PageProps<"/ops/dis
       <OpsNav current="dispatch" />
       <h1 className="text-xl font-semibold">{t("dispatch.title")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t("dispatch.intro")}</p>
-      <ActionError code={sp.error as string | undefined} requestId={sp.ref as string | undefined} />
+      <ActionError
+        code={sp.error as string | undefined}
+        requestId={sp.ref as string | undefined}
+        fields={sp.fields as string | undefined}
+      />
 
       {canDispatch ? (
         shipments.length === 0 ? (
