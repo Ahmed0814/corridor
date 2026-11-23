@@ -75,6 +75,7 @@ export async function ActionError({
       <p className="font-medium">
         {t("generic")} <code className="ms-1">{code}</code>
       </p>
+      {t.has(`codes.${code}`) ? <p className="mt-1">{t(`codes.${code}`)}</p> : null}
       {fieldList.length > 0 ? (
         <p className="mt-1">
           {t("checkFields", {

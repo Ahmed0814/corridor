@@ -212,6 +212,32 @@
         "recipient_name": "Recipient name",
         "role": "Role",
         "customer_id": "Customer"
+      },
+      "codes": {
+        "conflict": "This already exists (for example the same container number, plate, name or email). Check the list: it may have been created by your first try.",
+        "invalid_transition": "This action is not possible in the current status. Refresh the page to see the latest status.",
+        "forbidden": "Your role is not allowed to do this.",
+        "not_found": "Not found. It may have been removed, or it belongs to another company.",
+        "already_linked": "This account or profile is already linked to another one.",
+        "wrong_role": "This account has the wrong role for this link (a driver account for a driver profile, a customer account for a customer).",
+        "container_unavailable": "A selected container is not available (it is on another shipment or in maintenance).",
+        "vehicle_unavailable": "The truck is not available (it is on another trip or not active).",
+        "driver_unavailable": "The driver is not available (on another trip, not active, or licence expired).",
+        "trailer_unavailable": "The trailer is not available.",
+        "assignment_conflict": "The truck or driver was just assigned to another trip. Refresh and choose again.",
+        "no_started_trip": "The shipment has no started trip yet. Start the trip first.",
+        "invalid_file": "The file was refused: use a JPEG, PNG or WebP photo (or a PDF), at most 10 MB.",
+        "invalid_signature": "The signature could not be used. Ask the recipient to sign again.",
+        "invalid_evidence": "The delivery photo or signature does not belong to this shipment. Upload them again.",
+        "photo_required": "Take or choose a delivery photo first.",
+        "signature_required": "The recipient must sign first.",
+        "reason_required": "A reason is required.",
+        "mfa_required": "Your role needs two-step sign-in. Set up your authenticator app first.",
+        "unauthenticated": "Your session has ended. Sign in again.",
+        "unreachable": "The server could not be reached. Check your connection and try again.",
+        "rate_limited": "Too many requests. Wait a minute and try again.",
+        "already_verified": "This is already verified.",
+        "bad_request": "The form was incomplete. Refresh the page and try again."
       }
     },
     "map": {

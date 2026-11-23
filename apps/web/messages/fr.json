@@ -212,6 +212,32 @@
         "recipient_name": "Nom du destinataire",
         "role": "Rôle",
         "customer_id": "Client"
+      },
+      "codes": {
+        "conflict": "Cet élément existe déjà (même numéro de conteneur, immatriculation, nom ou e-mail). Vérifiez la liste : il a peut-être été créé lors de votre premier essai.",
+        "invalid_transition": "Cette action n’est pas possible dans le statut actuel. Actualisez la page pour voir le dernier statut.",
+        "forbidden": "Votre rôle ne permet pas cette action.",
+        "not_found": "Introuvable. L’élément a peut-être été supprimé ou appartient à une autre entreprise.",
+        "already_linked": "Ce compte ou ce profil est déjà lié à un autre.",
+        "wrong_role": "Ce compte n’a pas le bon rôle pour ce lien (compte chauffeur pour un profil chauffeur, compte client pour un client).",
+        "container_unavailable": "Un conteneur sélectionné n’est pas disponible (sur une autre expédition ou en maintenance).",
+        "vehicle_unavailable": "Le camion n’est pas disponible (sur un autre trajet ou inactif).",
+        "driver_unavailable": "Le chauffeur n’est pas disponible (sur un autre trajet, inactif ou permis expiré).",
+        "trailer_unavailable": "La remorque n’est pas disponible.",
+        "assignment_conflict": "Le camion ou le chauffeur vient d’être affecté à un autre trajet. Actualisez et choisissez à nouveau.",
+        "no_started_trip": "L’expédition n’a pas encore de trajet démarré. Démarrez d’abord le trajet.",
+        "invalid_file": "Fichier refusé : utilisez une photo JPEG, PNG ou WebP (ou un PDF), 10 Mo maximum.",
+        "invalid_signature": "La signature est inutilisable. Demandez au destinataire de signer à nouveau.",
+        "invalid_evidence": "La photo ou la signature n’appartient pas à cette expédition. Téléversez-les à nouveau.",
+        "photo_required": "Prenez ou choisissez d’abord une photo de livraison.",
+        "signature_required": "Le destinataire doit d’abord signer.",
+        "reason_required": "Un motif est obligatoire.",
+        "mfa_required": "Votre rôle exige la connexion en deux étapes. Configurez d’abord votre application d’authentification.",
+        "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+        "unreachable": "Le serveur est injoignable. Vérifiez votre connexion et réessayez.",
+        "rate_limited": "Trop de requêtes. Attendez une minute et réessayez.",
+        "already_verified": "C’est déjà vérifié.",
+        "bad_request": "Le formulaire était incomplet. Actualisez la page et réessayez."
       }
     },
     "map": {
