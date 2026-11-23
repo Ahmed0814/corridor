@@ -256,7 +256,7 @@
       "none": "Aucun véhicule n’a encore transmis de position.",
       "feedStale": "Les mises à jour en direct n’arrivent plus. La carte affiche les dernières données reçues à {time} ; les positions continuent de vieillir.",
       "updated": "Mis à jour {time}",
-      "basemap": "Fond de carte : tuiles de développement. La production utilise des tuiles auto-hébergées."
+      "basemap": "Fond de carte : OpenFreeMap, © contributeurs OpenStreetMap. La production utilise des tuiles auto-hébergées."
     },
     "eta": {
       "title": "Arrivée estimée",

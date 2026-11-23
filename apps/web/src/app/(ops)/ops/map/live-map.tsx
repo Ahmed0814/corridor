@@ -6,6 +6,7 @@ import * as maplibregl from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  boundsAround,
   CORRIDOR_BOUNDS,
   displayedFreshness,
   type FleetSnapshot,
@@ -54,6 +55,7 @@ export function LiveMap({
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, maplibregl.Marker>());
+  const fitted = useRef(false);
   const [snapshot, setSnapshot] = useState<FleetSnapshot | null>(initial);
   const [lastSuccess, setLastSuccess] = useState<Date | null>(initial ? new Date() : null);
   const [now, setNow] = useState(() => new Date());
@@ -104,6 +106,12 @@ export function LiveMap({
   useEffect(() => {
     const m = map.current;
     if (!m) return;
+    // First time vehicles are known: show where they actually are (not only the corridor view).
+    if (!fitted.current && rows.length > 0) {
+      const b = boundsAround(rows);
+      if (b) m.fitBounds(b, { padding: 60, maxZoom: 14, duration: 0 });
+      fitted.current = true;
+    }
     const seen = new Set<string>();
     for (const v of rows) {
       seen.add(v.vehicle_id);

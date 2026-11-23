@@ -312,3 +312,5 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 ## D-074 Drivers may be invited by email until SMS is configured
 **Context:** invitations required a phone number for drivers (SMS one-time codes, D-006), but no SMS sender is configured (needs credentials and approval), so no driver could be invited on the test environment. **Choice:** a driver invitation accepts an email address or a phone number. Phone stays the intended default once SMS is set up. Everything else is unchanged: the driver role, driver-client-only access, and linking to a driver profile before any trip is visible. **Trade-off:** drivers without email still need SMS later.
 
+**Update to D-060 (2026-11-23):** the demo tiles showed only country outlines, so customers and staff could not read a position. The default style is now OpenFreeMap "liberty" (OpenStreetMap data, free, no API key, attribution shown). The customer map zooms to street level around the ~1 km area; the office map fits the vehicles' real positions on first load. Production still moves to self-hosted PMTiles (D-028).
+

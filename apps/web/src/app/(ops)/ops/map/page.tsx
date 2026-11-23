@@ -1,14 +1,14 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { apiGet } from "@/lib/api";
-import type { FleetSnapshot } from "@/lib/tracking";
+import { DEFAULT_MAP_STYLE, type FleetSnapshot } from "@/lib/tracking";
 
 import { ActionError, OpsNav } from "../_components/ui";
 import { LiveMap, type LiveMapLabels } from "./live-map";
 
-// Development default: MapLibre's demo tiles. Production points this at the self-hosted PMTiles
-// style (DECISIONS D-028); OpenStreetMap's public tile servers are not used.
-const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json";
+// Default: OpenFreeMap street style (OpenStreetMap data, D-060). Production points this at the
+// self-hosted PMTiles style (DECISIONS D-028); OpenStreetMap's own tile servers are not used.
+const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? DEFAULT_MAP_STYLE;
 
 export default async function MapPage() {
   const t = await getTranslations("Ops.map");

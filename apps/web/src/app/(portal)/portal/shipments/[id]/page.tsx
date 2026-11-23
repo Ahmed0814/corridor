@@ -8,8 +8,9 @@ import { ShipmentMap } from "@/components/shipment-map";
 import { type DocumentInfo, etaView, type PublicPosition } from "@/lib/phase6";
 
 import { formatDate, StatusBadge } from "../../../../(ops)/ops/_components/ui";
+import { DEFAULT_MAP_STYLE } from "@/lib/tracking";
 
-const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json";
+const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? DEFAULT_MAP_STYLE;
 const ON_THE_ROAD = new Set(["dispatched", "in_transit", "at_border"]);
 
 // Customer-facing milestones only: no actors, reasons or internal events.

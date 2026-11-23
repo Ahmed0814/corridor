@@ -5,12 +5,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { apiPublicGet } from "@/lib/api-files";
 import { ShipmentMap } from "@/components/shipment-map";
 import { type PublicTracking, plausibleToken } from "@/lib/phase6";
+import { DEFAULT_MAP_STYLE } from "@/lib/tracking";
 
 // Public tracking page (security-model.md §6): no sign-in, only the fields the link allows,
 // coarse position with its recorded and received times. Never indexed, never leaks the URL.
 export const dynamic = "force-dynamic";
 
-const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json";
+const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? DEFAULT_MAP_STYLE;
 
 export const metadata: Metadata = {
   title: "Shipment tracking",

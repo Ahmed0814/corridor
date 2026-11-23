@@ -90,7 +90,7 @@ export function ShipmentMap({
     const color = FRESHNESS_COLOR[position.freshness] ?? "#6b7280";
     if (!marker.current) {
       marker.current = new maplibregl.Marker({ color }).setLngLat(lngLat).addTo(m);
-      m.easeTo({ center: lngLat, zoom: 9 });
+      m.easeTo({ center: lngLat, zoom: 13 }); // street level: the ~1 km circle fills the view
     } else {
       marker.current.setLngLat(lngLat);
     }

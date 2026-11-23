@@ -79,3 +79,21 @@ export function formatAge(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   return m ? `${h} h ${m} min` : `${h} h`;
 }
+
+/**
+ * Street map style. OpenFreeMap (OpenStreetMap data, free, no API key) replaces the low-detail
+ * MapLibre demo tiles; NEXT_PUBLIC_MAP_STYLE_URL overrides it (production: self-hosted PMTiles, D-028).
+ */
+export const DEFAULT_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+
+/** [[west, south], [east, north]] around the given points, padded; null when there are none. */
+export function boundsAround(points: { latitude: number; longitude: number }[]): [[number, number], [number, number]] | null {
+  if (points.length === 0) return null;
+  const lats = points.map((p) => p.latitude);
+  const lngs = points.map((p) => p.longitude);
+  const pad = 0.05;
+  return [
+    [Math.min(...lngs) - pad, Math.min(...lats) - pad],
+    [Math.max(...lngs) + pad, Math.max(...lats) + pad],
+  ];
+}

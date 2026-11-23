@@ -256,7 +256,7 @@
       "none": "No vehicle has reported a position yet.",
       "feedStale": "Live updates are not arriving. The map shows the last data received at {time}; positions keep ageing.",
       "updated": "Updated {time}",
-      "basemap": "Base map: development tiles. Production uses self-hosted tiles."
+      "basemap": "Base map: OpenFreeMap, © OpenStreetMap contributors. Production uses self-hosted tiles."
     },
     "eta": {
       "title": "Estimated arrival",
