@@ -91,10 +91,26 @@ export function describeError(code: string | null): string {
     case 'no_access':
       return 'This account has no access to Corridor.';
     case 'wrong_client':
-      return 'This account cannot use the driver app.';
+      return 'This account cannot use the driver app. Tap “Use a different account” and sign in with your driver email.';
     case 'unauthenticated':
       return 'Your session has expired. Sign in again.';
     default:
       return 'Something went wrong. Try again.';
   }
+}
+
+/**
+ * The identity provider's sign-out URL (Cognito /logout, or the local issuer's /dev-auth/logout),
+ * derived from the authorize endpoint. Used to forget a remembered account in the browser so the
+ * next sign-in shows the email/password form again.
+ */
+export function logoutUrl(authorizeEndpoint: string, clientId: string, redirectUri: string): string {
+  const base = authorizeEndpoint.replace(/\/oauth2\/authorize$/, '/logout').replace(/\/authorize$/, '/logout');
+  const q = new URLSearchParams({ client_id: clientId, logout_uri: redirectUri });
+  return `${base}?${q.toString()}`;
+}
+
+/** Errors that mean "signed in, but with an account that cannot use this app". */
+export function isWrongAccount(code: string | null): boolean {
+  return code === 'wrong_client' || code === 'no_membership' || code === 'no_access';
 }

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, fetchMe } from './src/api';
-import { describeError, toStoredSession, type Me } from './src/auth/session';
+import { describeError, isWrongAccount, logoutUrl, toStoredSession, type Me } from './src/auth/session';
 import { clearSession, loadSession, saveSession } from './src/auth/tokenStore';
 import { TripsScreen } from './src/screens/TripsScreen';
 import { getEngine } from './src/tracking/runtime';
@@ -21,7 +21,7 @@ const discovery = {
 
 type State =
   | { kind: 'loading' }
-  | { kind: 'signedOut'; message?: string }
+  | { kind: 'signedOut'; message?: string; wrongAccount?: boolean }
   | { kind: 'signedIn'; me: Me };
 
 // Phase 2: sign-in only. Trips, background tracking and the offline queue arrive in Phase 5.
@@ -51,8 +51,10 @@ export default function App() {
       setState({ kind: 'signedIn', me });
     } catch (error) {
       const code = error instanceof ApiError ? error.code : null;
-      if (code === 'unauthenticated') await clearSession();
-      setState({ kind: 'signedOut', message: describeError(code) });
+      // A wrong account (e.g. an office account remembered by the browser) is forgotten here; the
+      // "Use a different account" button also signs it out of the identity provider.
+      if (code === 'unauthenticated' || isWrongAccount(code)) await clearSession();
+      setState({ kind: 'signedOut', message: describeError(code), wrongAccount: isWrongAccount(code) });
     }
   }, []);
 
@@ -88,9 +90,26 @@ export default function App() {
     }
   };
 
+  // End the identity provider's browser session too, so the next sign-in asks for email and password
+  // instead of silently reusing the remembered account.
+  const forgetBrowserAccount = async () => {
+    try {
+      await WebBrowser.openAuthSessionAsync(logoutUrl(AUTH.authorizationEndpoint, AUTH.clientId, redirectUri), redirectUri);
+    } catch {
+      // offline: the local session is still cleared below
+    }
+  };
+
   const signOut = async () => {
     await clearSession();
+    await forgetBrowserAccount();
     setState({ kind: 'signedOut' });
+  };
+
+  const useDifferentAccount = async () => {
+    await clearSession();
+    await forgetBrowserAccount();
+    await signIn();
   };
 
   return (
@@ -113,6 +132,14 @@ export default function App() {
             style={({ pressed }) => [styles.button, (!request || pressed) && styles.buttonDim]}
           >
             <Text style={styles.buttonText}>Sign in</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={!request}
+            onPress={useDifferentAccount}
+            style={state.wrongAccount ? styles.button : styles.linkButton}
+          >
+            <Text style={state.wrongAccount ? styles.buttonText : styles.link}>Use a different account</Text>
           </Pressable>
         </>
       )}
