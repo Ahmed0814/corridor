@@ -22,6 +22,7 @@ from corridor.shipments.schemas import (
     ShipmentIn,
     ShipmentOut,
     ShipmentPage,
+    ShipmentPositionOut,
     ShipmentUpdateIn,
     TrackingLinkCreated,
     TrackingLinkIn,
@@ -215,3 +216,13 @@ def public_tracking(request: HttpRequest, token: str) -> HttpResponse:
     response["Cache-Control"] = "no-store"
     response["Referrer-Policy"] = "no-referrer"
     return response
+
+
+@router.get(
+    "/shipments/{shipment_id}/position",
+    response=ShipmentPositionOut,
+    summary="Approximate position of a shipment on the road (about 1 km; customers see their own)",
+)
+@requires("tracking.read")
+def shipment_position(request: HttpRequest, shipment_id: uuid.UUID) -> ShipmentPositionOut:
+    return ShipmentPositionOut(position=links.position_for(ctx_of(request), shipment_id))

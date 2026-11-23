@@ -191,7 +191,7 @@ def _coarse_position(shipment_id: uuid.UUID) -> PublicPosition | None:
     moving = trips.moving_trip_for_shipment(shipment_id)
     if moving is None:
         return None
-    point = tracking.latest_point(moving[1])
+    point = tracking.latest_point(moving[1], trip_id=moving[0])
     if point is None:
         return None
 
@@ -206,3 +206,14 @@ def _coarse_position(shipment_id: uuid.UUID) -> PublicPosition | None:
         freshness=point.freshness,
         precision_km=1.0,
     )
+
+
+def position_for(ctx: RequestContext, shipment_id: uuid.UUID) -> PublicPosition | None:
+    """Approximate position of a shipment the caller may see (customer portal, office), only while it
+    is on the road. Same rounding and rules as the public tracking page."""
+    from corridor.shipments import services as shipments
+
+    s = shipments.visible(ctx).filter(id=shipment_id).first()
+    if s is None:
+        raise not_found()
+    return _coarse_position(s.id) if s.status in MOVING else None

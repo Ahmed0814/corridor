@@ -440,7 +440,19 @@
       "delivery_reattempt": "Delivery re-attempted",
       "delivered": "Delivered",
       "cancelled": "Cancelled"
-    }
+    },
+    "whereIs": "Where is my shipment?",
+    "noPosition": "No position yet: it appears once the truck carrying this shipment sends one.",
+    "recorded": "recorded {at}",
+    "received": "received {at}",
+    "precision": "about 1 km",
+    "freshness": {
+      "live": "Live",
+      "delayed": "Delayed signal",
+      "stale": "Last known position (old)",
+      "offline": "No recent signal"
+    },
+    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors."
   },
   "Track": {
     "heading": "Shipment tracking",
@@ -471,7 +483,9 @@
       "delivered": "Delivered",
       "delivery_failed": "Delivery attempt failed",
       "cancelled": "Cancelled"
-    }
+    },
+    "noPosition": "No position yet: it appears once the truck carrying this shipment sends one.",
+    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors."
   },
   "Mfa": {
     "title": "Set up your authenticator app",

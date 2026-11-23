@@ -160,6 +160,12 @@ class PublicPosition(Schema):
     freshness: str
 
 
+class ShipmentPositionOut(Schema):
+    """Approximate position while the shipment is on the road; null otherwise."""
+
+    position: PublicPosition | None
+
+
 class PublicTimelineItem(Schema):
     label: str
     at: datetime

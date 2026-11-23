@@ -4,9 +4,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { apiGet } from "@/lib/api";
 import type { LifecycleEvent, Shipment } from "@/lib/logistics";
-import { type DocumentInfo, etaView } from "@/lib/phase6";
+import { ShipmentMap } from "@/components/shipment-map";
+import { type DocumentInfo, etaView, type PublicPosition } from "@/lib/phase6";
 
 import { formatDate, StatusBadge } from "../../../../(ops)/ops/_components/ui";
+
+const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json";
+const ON_THE_ROAD = new Set(["dispatched", "in_transit", "at_border"]);
 
 // Customer-facing milestones only: no actors, reasons or internal events.
 const CUSTOMER_EVENTS = new Set([
@@ -27,10 +31,11 @@ export default async function PortalShipment({ params }: PageProps<"/portal/ship
   const t = await getTranslations("Portal");
   const locale = await getLocale();
   const sid = encodeURIComponent(id);
-  const [shipment, events, documents] = await Promise.all([
+  const [shipment, events, documents, position] = await Promise.all([
     apiGet<Shipment>(`/shipments/${sid}`),
     apiGet<LifecycleEvent[]>(`/shipments/${sid}/events`),
     apiGet<DocumentInfo[]>(`/shipments/${sid}/documents`),
+    apiGet<{ position: PublicPosition | null }>(`/shipments/${sid}/position`),
   ]);
   if (!shipment.ok) {
     if (shipment.status === 404 || shipment.status === 422) notFound();
@@ -83,6 +88,32 @@ export default async function PortalShipment({ params }: PageProps<"/portal/ship
           </div>
         ) : null}
       </dl>
+
+      {ON_THE_ROAD.has(s.status) ? (
+        <section className="mt-8 space-y-2">
+          <h2 className="text-base font-semibold">{t("whereIs")}</h2>
+          <ShipmentMap
+            initial={position.ok ? position.data.position : null}
+            pollUrl={`/portal/shipments/${s.id}/position`}
+            styleUrl={STYLE_URL}
+            locale={locale}
+            labels={{
+              title: t("whereIs"),
+              noPosition: t("noPosition"),
+              recorded: t("recorded", { at: "{at}" }),
+              received: t("received", { at: "{at}" }),
+              precision: t("precision"),
+              freshness: {
+                live: t("freshness.live"),
+                delayed: t("freshness.delayed"),
+                stale: t("freshness.stale"),
+                offline: t("freshness.offline"),
+              },
+              basemap: t("basemap"),
+            }}
+          />
+        </section>
+      ) : null}
 
       <h2 className="mt-8 text-base font-semibold">{t("documents")}</h2>
       {documents.ok && documents.data.length > 0 ? (

@@ -589,11 +589,17 @@ class LatestPoint:
     freshness: Freshness
 
 
-def latest_point(vehicle_id: uuid.UUID) -> LatestPoint | None:
+def latest_point(vehicle_id: uuid.UUID, trip_id: uuid.UUID | None = None) -> LatestPoint | None:
     """The vehicle's latest trusted point with freshness, for internal callers that already enforced
-    access (e.g. a public tracking link resolved to this tenant). Requires a tenant context."""
+    access (e.g. a public tracking link resolved to this tenant). Requires a tenant context.
+    With `trip_id`, only a point recorded in that trip's tracking session counts: a customer must
+    never see where the truck was on an earlier job."""
     v = VehicleLatestLocation.objects.filter(vehicle_id=vehicle_id).first()
     if v is None:
+        return None
+    if trip_id is not None and not (
+        v.session_id and TrackingSession.objects.filter(id=v.session_id, trip_id=trip_id).exists()
+    ):
         return None
     active = _session_activity([v.session_id]).get(v.session_id, False) if v.session_id else False
     state, _ = freshness(v.recorded_at, now=timezone.now(), session_active=active, limits=thresholds())

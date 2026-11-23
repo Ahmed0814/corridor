@@ -440,7 +440,19 @@
       "delivery_reattempt": "Nouvelle tentative de livraison",
       "delivered": "Livrée",
       "cancelled": "Annulée"
-    }
+    },
+    "whereIs": "Où est mon expédition ?",
+    "noPosition": "Pas encore de position : elle apparaît dès que le camion transportant cette expédition en envoie une.",
+    "recorded": "enregistrée {at}",
+    "received": "reçue {at}",
+    "precision": "environ 1 km",
+    "freshness": {
+      "live": "En direct",
+      "delayed": "Signal retardé",
+      "stale": "Dernière position connue (ancienne)",
+      "offline": "Aucun signal récent"
+    },
+    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap."
   },
   "Track": {
     "heading": "Suivi d’expédition",
@@ -471,7 +483,9 @@
       "delivered": "Livrée",
       "delivery_failed": "Échec de livraison",
       "cancelled": "Annulée"
-    }
+    },
+    "noPosition": "Pas encore de position : elle apparaît dès que le camion transportant cette expédition en envoie une.",
+    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap."
   },
   "Mfa": {
     "title": "Configurer votre application d’authentification",

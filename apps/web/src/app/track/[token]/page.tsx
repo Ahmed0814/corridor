@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { apiPublicGet } from "@/lib/api-files";
+import { ShipmentMap } from "@/components/shipment-map";
 import { type PublicTracking, plausibleToken } from "@/lib/phase6";
 
 // Public tracking page (security-model.md §6): no sign-in, only the fields the link allows,
 // coarse position with its recorded and received times. Never indexed, never leaks the URL.
 export const dynamic = "force-dynamic";
+
+const STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json";
 
 export const metadata: Metadata = {
   title: "Shipment tracking",
@@ -73,17 +76,29 @@ export default async function TrackPage({ params }: PageProps<"/track/[token]">)
         </section>
       ) : null}
 
-      {v.position ? (
-        <section>
+      {"position" in v ? (
+        <section className="space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">{t("position")}</h2>
-          <p>
-            {v.position.latitude.toFixed(2)}, {v.position.longitude.toFixed(2)}{" "}
-            <span className="text-xs text-muted-foreground">{t("precision", { km: v.position.precision_km })}</span>
-          </p>
-          <p className="text-sm">
-            {t(`freshness.${v.position.freshness}`)} · {t("recorded", { at: when(v.position.recorded_at, locale) })} ·{" "}
-            {t("received", { at: when(v.position.received_at, locale) })}
-          </p>
+          <ShipmentMap
+            initial={v.position ?? null}
+            pollUrl={`/track/${encodeURIComponent(token)}/position`}
+            styleUrl={STYLE_URL}
+            locale={locale}
+            labels={{
+              title: t("position"),
+              noPosition: t("noPosition"),
+              recorded: t("recorded", { at: "{at}" }),
+              received: t("received", { at: "{at}" }),
+              precision: t("precision", { km: 1 }),
+              freshness: {
+                live: t("freshness.live"),
+                delayed: t("freshness.delayed"),
+                stale: t("freshness.stale"),
+                offline: t("freshness.offline"),
+              },
+              basemap: t("basemap"),
+            }}
+          />
         </section>
       ) : null}
 
