@@ -76,6 +76,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-069 | Notifications as outbox handlers; real email only with EMAIL_SENDING_ENABLED | Decided |
 | D-070 | Documents validated by content; local storage adapter until S3 | Decided |
 | D-071 | Delivery requires photo + signature of the same shipment | Decided |
+| D-074 | Drivers may be invited by email until SMS sign-in is configured | Decided |
 | D-073 | Users set up their own authenticator in the web app (Cognito user APIs) | Decided |
 | D-072 | Test environment on AWS under $20/month (single small server) | Decided by owner (budget); region needs confirmation |
 
@@ -307,4 +308,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 
 ## D-073 Authenticator (TOTP) setup in the web app
 **Context:** with MFA *optional* on the user pool, Cognito's hosted sign-in never asks a user to set up an authenticator, so an owner or admin (roles that require MFA, D-006) could sign in but had no permissions and no way to fix it. **Choice:** `/account/mfa` in the web app enrols TOTP with the user's own access token: `AssociateSoftwareToken` → QR code / key → `VerifySoftwareToken` with a code from the app → `SetUserMFAPreference` (TOTP enabled, preferred). The web clients may request `aws.cognito.signin.user.admin` (driver client unchanged); calls run server-side, the token stays in the HttpOnly cookie. The MFA banner links to the page. After setup the user signs in again and the API confirms MFA through `AdminGetUser` as before. **Trade-off:** the account scope lets a signed-in web session change that user's own Cognito settings (password, MFA); it cannot touch other users. Making MFA *required* pool-wide was rejected: drivers and customers would have to enrol too.
+
+## D-074 Drivers may be invited by email until SMS is configured
+**Context:** invitations required a phone number for drivers (SMS one-time codes, D-006), but no SMS sender is configured (needs credentials and approval), so no driver could be invited on the test environment. **Choice:** a driver invitation accepts an email address or a phone number. Phone stays the intended default once SMS is set up. Everything else is unchanged: the driver role, driver-client-only access, and linking to a driver profile before any trip is visible. **Trade-off:** drivers without email still need SMS later.
 

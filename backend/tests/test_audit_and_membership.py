@@ -134,10 +134,17 @@ def test_inviting_someone_from_another_company_reveals_nothing(world: World) -> 
     assert {m["tenant_slug"] for m in me["memberships"]} == {"alpha", "bravo"}
 
 
-def test_driver_invitation_requires_a_phone_number(world: World) -> None:
+def test_driver_invitation_by_phone_or_email(world: World) -> None:
+    """Drivers are invited by phone (SMS) or, until SMS is configured, by email (D-074)."""
     admin = client_for(world.m("alpha_admin"))
-    status, _ = admin.post("/memberships", {"email": "d@alpha.test", "role": "driver"})
-    assert status == 422
+    status, _ = admin.post("/memberships", {"role": "driver"})
+    assert status == 422  # one identifier is still required
+    status, by_email = admin.post("/memberships", {"email": "d@alpha.test", "role": "driver"})
+    assert status == 201 and by_email["role"] == "driver" and by_email["email"] == "d@alpha.test"
+    status, me = ApiClient(token_for("d@alpha.test", ClientKind.DRIVER_MOBILE)).get("/me")
+    assert status == 200 and me["active_tenant"]["role"] == "driver"
+    status, _ = ApiClient(token_for("d@alpha.test", ClientKind.WEB_OFFICE)).get("/tenant")
+    assert status in (401, 403)  # a driver still cannot use the office web client
     status, member = admin.post("/memberships", {"phone_e164": "+25377123499", "role": "driver"})
     assert status == 201 and member["phone_masked"] == "+253•••99"
     assert member["email"] is None

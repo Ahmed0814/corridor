@@ -91,8 +91,8 @@ class InviteIn(Schema):
     def _one_identifier(self) -> InviteIn:
         if not self.email and not self.phone_e164:
             raise ValueError("email or phone_e164 is required")
-        if self.role == "driver" and not self.phone_e164:
-            raise ValueError("drivers sign in with a phone number")
+        # Drivers sign in with a phone number (SMS code) or, until SMS is configured, an email
+        # address (D-074). Office and customer users always use email.
         if self.role != "driver" and not self.email:
             raise ValueError("office and customer users sign in with an email address")
         return self
