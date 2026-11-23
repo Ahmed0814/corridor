@@ -8,15 +8,41 @@ import { etaView } from "@/lib/phase6";
 import { formatDate, StatusBadge } from "../../(ops)/ops/_components/ui";
 
 // Customer portal: the API returns only this customer's shipments (scope rule, D-016).
-export default async function PortalHome() {
+export default async function PortalHome({ searchParams }: PageProps<"/portal">) {
+  const sp = await searchParams;
+  const container = typeof sp.container === "string" ? sp.container.replace(/\s+/g, "").toUpperCase().slice(0, 13) : "";
   const t = await getTranslations("Portal");
   const locale = await getLocale();
-  const shipments = await apiGet<Page<Shipment>>("/shipments?limit=100");
+  const shipments =
+    container.length >= 4
+      ? await apiGet<Shipment[]>(`/shipments/by-container/${encodeURIComponent(container)}`).then((r) =>
+          r.ok ? { ...r, data: { items: r.data, next_cursor: null } as Page<Shipment> } : r,
+        )
+      : await apiGet<Page<Shipment>>("/shipments?limit=100");
 
   return (
     <section>
       <h1 className="text-xl font-semibold">{t("title")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
+      <form method="get" className="mt-4 flex flex-wrap items-end gap-2">
+        <label className="text-sm">
+          <span className="mb-1 block font-medium">{t("findContainer")}</span>
+          <input
+            name="container"
+            defaultValue={container}
+            placeholder="MSCU1234566"
+            className="w-56 rounded-md border bg-background px-3 py-2 font-mono text-sm uppercase"
+          />
+        </label>
+        <button type="submit" className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+          {t("search")}
+        </button>
+        {container ? (
+          <a href="/portal" className="text-sm underline-offset-4 hover:underline">
+            {t("showAll")}
+          </a>
+        ) : null}
+      </form>
       {!shipments.ok ? (
         <p role="alert" className="mt-4 text-sm">
           {t("error")} <code>{shipments.error.code}</code>

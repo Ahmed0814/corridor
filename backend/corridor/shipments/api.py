@@ -14,6 +14,7 @@ from corridor.identity.services import ctx_of, requires, tenant_auth
 from corridor.shipments import links, services
 from corridor.shipments.schemas import (
     BorderIn,
+    ContainerLookupIn,
     CorrectionIn,
     DeliverIn,
     PublicTracking,
@@ -226,3 +227,28 @@ def public_tracking(request: HttpRequest, token: str) -> HttpResponse:
 @requires("tracking.read")
 def shipment_position(request: HttpRequest, shipment_id: uuid.UUID) -> ShipmentPositionOut:
     return ShipmentPositionOut(position=links.position_for(ctx_of(request), shipment_id))
+
+
+@router.get(
+    "/shipments/by-container/{number}",
+    response=list[ShipmentOut],
+    summary="Find shipments by container number (scope rules apply; customers see their own)",
+)
+@requires("shipments.read")
+def shipments_by_container(request: HttpRequest, number: str) -> list[ShipmentOut]:
+    return services.find_by_container(ctx_of(request), number)
+
+
+@public_router.post(
+    "/public/track",
+    response=PublicTracking,
+    summary="Public container tracking: container number AND shipment reference (rate limited)",
+)
+def public_track(request: HttpRequest, payload: ContainerLookupIn) -> HttpResponse:
+    # Strict limit: guessing references must be impractical (D-075).
+    ratelimit.check("public_track", request.META.get("REMOTE_ADDR") or "unknown", limit=10)
+    view = links.lookup_public(payload.container_number, payload.reference)
+    response = api.create_response(request, view.model_dump(mode="json", exclude_none=True), status=200)
+    response["Cache-Control"] = "no-store"
+    response["Referrer-Policy"] = "no-referrer"
+    return response

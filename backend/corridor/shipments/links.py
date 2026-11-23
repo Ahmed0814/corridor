@@ -217,3 +217,26 @@ def position_for(ctx: RequestContext, shipment_id: uuid.UUID) -> PublicPosition 
     if s is None:
         raise not_found()
     return _coarse_position(s.id) if s.status in MOVING else None
+
+
+def lookup_public(container_number: str, reference: str) -> PublicTracking:
+    """Public "track a container": container number AND shipment reference must both match one
+    shipment (D-075). Same allowlisted view as a tracking link with all public fields; any mismatch,
+    ambiguity or inactive company answers the same 404."""
+    from corridor.shipments.services import normalize_container_number
+
+    number = normalize_container_number(container_number)
+    ref = "".join(reference.split()).upper()[:40]
+    if not (11 <= len(number) <= 13) or not (3 <= len(ref) <= 40):
+        raise not_found()
+    with connection.cursor() as cur:
+        cur.execute("SELECT tenant_id, shipment_id FROM public_find_shipment(%s, %s)", [number, ref])
+        rows = cur.fetchall()
+    if len(rows) != 1:
+        raise not_found()
+    tenant_id, shipment_id = rows[0]
+    apply_context(tenant_id=tenant_id)
+    s = Shipment.objects.filter(id=shipment_id).first()
+    if s is None:
+        raise not_found()
+    return _public_view(s, set(DEFAULT_FIELDS))

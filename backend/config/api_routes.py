@@ -29,9 +29,10 @@ __all__ = ["api"]
 
 setattr(meta, PUBLIC_ATTR, True)  # /api/v1/meta is public by design (no tenant data)
 # Public tracking links: token-gated, allowlisted fields, rate limited (security-model.md §6).
-from corridor.shipments.api import public_tracking  # noqa: E402
+from corridor.shipments.api import public_track, public_tracking  # noqa: E402
 
 setattr(public_tracking, PUBLIC_ATTR, True)
+setattr(public_track, PUBLIC_ATTR, True)
 
 api.add_router("", me_router)
 api.add_router("", identity_router)

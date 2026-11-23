@@ -11,7 +11,8 @@
     "portalDescription": "Suivez vos expéditions et vos documents.",
     "admin": "Administration de la plateforme",
     "adminDescription": "Locataires, utilisateurs et configuration.",
-    "status": "État du système"
+    "status": "État du système",
+    "trackContainer": "Suivre un conteneur"
   },
   "Area": {
     "notBuilt": "Cet espace n'est pas encore construit. Les écrans arrivent en phases 3 à 6.",
@@ -371,7 +372,11 @@
         "good": "Bon",
         "damaged": "Endommagé",
         "needs_repair": "À réparer"
-      }
+      },
+      "find": "Trouver un conteneur",
+      "search": "Rechercher",
+      "onMap": "Voir sur la carte",
+      "notFound": "Aucune expédition avec le conteneur {number}."
     },
     "team": {
       "title": "Équipe",
@@ -478,7 +483,10 @@
       "stale": "Dernière position connue (ancienne)",
       "offline": "Aucun signal récent"
     },
-    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap."
+    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap.",
+    "findContainer": "Trouver mon conteneur",
+    "search": "Rechercher",
+    "showAll": "Afficher toutes les expéditions"
   },
   "Track": {
     "heading": "Suivi d’expédition",
@@ -511,7 +519,21 @@
       "cancelled": "Annulée"
     },
     "noPosition": "Pas encore de position : elle apparaît dès que le camion transportant cette expédition en envoie une.",
-    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap."
+    "basemap": "Zone approximative (environ 1 km). Données cartographiques © contributeurs OpenStreetMap.",
+    "lookup": {
+      "title": "Suivre un conteneur",
+      "intro": "Saisissez le numéro de conteneur et la référence d’expédition figurant sur vos documents.",
+      "container": "Numéro de conteneur",
+      "reference": "Référence d’expédition",
+      "submit": "Suivre",
+      "why": "Les deux sont nécessaires : les numéros sont peints sur les conteneurs, le numéro seul ne permet donc pas de voir où se trouve le vôtre.",
+      "errors": {
+        "not_found": "Aucune expédition ne correspond à ce numéro et à cette référence. Vérifiez les deux et réessayez.",
+        "rate_limited": "Trop de tentatives. Attendez une minute et réessayez.",
+        "invalid": "Saisissez un numéro de conteneur (4 lettres + 7 chiffres) et la référence d’expédition.",
+        "unavailable": "Le suivi est temporairement indisponible. Réessayez bientôt."
+      }
+    }
   },
   "Mfa": {
     "title": "Configurer votre application d’authentification",

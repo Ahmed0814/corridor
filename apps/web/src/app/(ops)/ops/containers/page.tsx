@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { type Me, apiGet } from "@/lib/api";
-import type { Container, Page } from "@/lib/logistics";
+import type { Container, Page, Shipment } from "@/lib/logistics";
 
 import { createContainer } from "../actions";
 import {
@@ -26,6 +27,8 @@ export default async function ContainersPage({ searchParams }: PageProps<"/ops/c
     apiGet<Page<ContainerRow>>("/containers?limit=200"),
   ]);
   const canWrite = me.ok && me.data.permissions.includes("containers.write");
+  const find = typeof sp.find === "string" ? sp.find.replace(/\s+/g, "").toUpperCase().slice(0, 13) : "";
+  const found = find.length >= 4 ? await apiGet<Shipment[]>(`/shipments/by-container/${encodeURIComponent(find)}`) : null;
   const rows = containers.ok ? containers.data.items : [];
 
   return (
@@ -40,6 +43,42 @@ export default async function ContainersPage({ searchParams }: PageProps<"/ops/c
       {!containers.ok ? (
         <ActionError code={containers.error.code} requestId={containers.error.requestId ?? undefined} />
       ) : null}
+      <form method="get" className="mt-4 flex flex-wrap items-end gap-2">
+        <label className="text-sm">
+          <span className="mb-1 block font-medium">{t("containers.find")}</span>
+          <input name="find" defaultValue={find} placeholder="MSCU1234566" className={`${inputClass} w-56 font-mono uppercase`} />
+        </label>
+        <button type="submit" className={buttonClass}>
+          {t("containers.search")}
+        </button>
+      </form>
+      {found ? (
+        <div className="mt-3 rounded-lg border p-3 text-sm">
+          {found.ok && found.data.length > 0 ? (
+            <ul className="space-y-1">
+              {found.data.map((sh) => (
+                <li key={sh.id} className="flex flex-wrap items-center gap-2">
+                  <Link href={`/ops/shipments/${sh.id}`} prefetch={false} className="font-medium underline-offset-4 hover:underline">
+                    {sh.reference}
+                  </Link>
+                  <StatusBadge status={sh.status} />
+                  <span className="text-muted-foreground">
+                    {sh.customer_name} · {sh.origin_label} → {sh.destination_label}
+                  </span>
+                  {["dispatched", "in_transit", "at_border"].includes(sh.status) ? (
+                    <Link href="/ops/map" prefetch={false} className="text-xs underline-offset-4 hover:underline">
+                      {t("containers.onMap")}
+                    </Link>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">{t("containers.notFound", { number: find })}</p>
+          )}
+        </div>
+      ) : null}
+
       <div className="mt-4 overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">

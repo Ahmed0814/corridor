@@ -31,12 +31,15 @@ function when(iso: string, locale: string): string {
 export function ShipmentMap({
   initial,
   pollUrl,
+  pollBody,
   styleUrl,
   locale,
   labels,
 }: {
   initial: PublicPosition | null;
   pollUrl: string;
+  /** When set, the position is fetched with a JSON POST of this body (no secrets in URLs). */
+  pollBody?: Record<string, string>;
   styleUrl: string;
   locale: string;
   labels: ShipmentMapLabels;
@@ -50,14 +53,19 @@ export function ShipmentMap({
   useEffect(() => {
     const id = setInterval(async () => {
       try {
-        const r = await fetch(pollUrl, { cache: "no-store" });
+        const r = await fetch(
+          pollUrl,
+          pollBody
+            ? { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pollBody) }
+            : { cache: "no-store" },
+        );
         if (r.ok) setPosition(((await r.json()) as { position: PublicPosition | null }).position);
       } catch {
         // keep the last known position; its recorded time tells the customer how old it is
       }
     }, CUSTOMER_POLL_MS);
     return () => clearInterval(id);
-  }, [pollUrl]);
+  }, [pollUrl, pollBody]);
 
   useEffect(() => {
     if (!container.current || map.current) return;

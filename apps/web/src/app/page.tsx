@@ -31,6 +31,9 @@ export default async function HomePage() {
         ))}
       </div>
       <p className="mt-10">
+        <Link href="/track" prefetch={false} className="me-4 text-sm font-medium underline underline-offset-4">
+          {t("Home.trackContainer")}
+        </Link>
         <Link href="/status" className="text-sm underline underline-offset-4">
           {t("Home.status")}
         </Link>

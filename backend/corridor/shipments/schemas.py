@@ -166,6 +166,11 @@ class ShipmentPositionOut(Schema):
     position: PublicPosition | None
 
 
+class ContainerLookupIn(_In):
+    container_number: str = Field(min_length=4, max_length=20)
+    reference: str = Field(min_length=3, max_length=60)
+
+
 class PublicTimelineItem(Schema):
     label: str
     at: datetime

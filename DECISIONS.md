@@ -76,6 +76,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 | D-069 | Notifications as outbox handlers; real email only with EMAIL_SENDING_ENABLED | Decided |
 | D-070 | Documents validated by content; local storage adapter until S3 | Decided |
 | D-071 | Delivery requires photo + signature of the same shipment | Decided |
+| D-075 | Tracking by container number: staff and portal search; public lookup needs number + reference | Decided |
 | D-074 | Drivers may be invited by email until SMS sign-in is configured | Decided |
 | D-073 | Users set up their own authenticator in the web app (Cognito user APIs) | Decided |
 | D-072 | Test environment on AWS under $20/month (single small server) | Decided by owner (budget); region needs confirmation |
@@ -313,4 +314,7 @@ Status: **Fixed** = given by MASTER_PROMPT §2. **Decided** = chosen under rule 
 **Context:** invitations required a phone number for drivers (SMS one-time codes, D-006), but no SMS sender is configured (needs credentials and approval), so no driver could be invited on the test environment. **Choice:** a driver invitation accepts an email address or a phone number. Phone stays the intended default once SMS is set up. Everything else is unchanged: the driver role, driver-client-only access, and linking to a driver profile before any trip is visible. **Trade-off:** drivers without email still need SMS later.
 
 **Update to D-060 (2026-11-23):** the demo tiles showed only country outlines, so customers and staff could not read a position. The default style is now OpenFreeMap "liberty" (OpenStreetMap data, free, no API key, attribution shown). The customer map zooms to street level around the ~1 km area; the office map fits the vehicles' real positions on first load. Production still moves to self-hosted PMTiles (D-028).
+
+## D-075 Tracking by container number
+**Context:** the owner wants customers to track by container number, as shipping lines do. Container numbers are printed on the boxes and documents, so a number alone must never reveal where a container is. **Choice:** (1) office users search any container of their company (Containers page, `GET /shipments/by-container/{number}`); (2) portal customers search the same way and see only their own shipments (scope rules); (3) a public "Track a container" page needs the container number AND the shipment reference; a SECURITY DEFINER function `public_find_shipment` returns a match only for one shipment of an active company that is on the road or delivered within 180 days, and the response is the same allowlisted view as a tracking link (≈1 km position, no driver or vehicle). Mismatches, drafts and ambiguity answer the same 404; the public endpoint allows 10 requests a minute per visitor (the web server forwards the visitor address). Lookups go in POST bodies, never in URLs. **Trade-off:** customers need the reference from their documents; a later option is a customer-chosen PIN.
 

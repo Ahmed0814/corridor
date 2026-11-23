@@ -612,3 +612,20 @@ def recompute_eta_for_trip(trip_id: uuid.UUID, *, lat: float, lng: float, record
 
 def customer_id_of(shipment_id: uuid.UUID) -> uuid.UUID | None:
     return Shipment.objects.filter(id=shipment_id).values_list("customer_id", flat=True).first()
+
+
+def normalize_container_number(raw: str) -> str:
+    return "".join(raw.split()).upper()[:13]
+
+
+def find_by_container(ctx: RequestContext, number: str) -> list[ShipmentOut]:
+    """Shipments that carry (or carried) this container, newest first. Scope rules apply:
+    office users see the company's shipments, customers only their own, drivers their trips'."""
+    n = normalize_container_number(number)
+    if len(n) < 4:
+        return []
+    rows = list(
+        visible(ctx).filter(container_links__container__number=n).distinct().order_by("-created_at")[:20]
+    )
+    names = customers.names(list({r.customer_id for r in rows}))
+    return [_out(r, customer_names=names) for r in rows]

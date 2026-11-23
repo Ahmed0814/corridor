@@ -1,7 +1,7 @@
 // Server-side API calls for Phase 6: multipart uploads, public (unauthenticated) reads and raw
 // downloads. Same rules as lib/api.ts: the token and company come from httpOnly cookies.
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import type { ApiResult } from "@/lib/api";
 import { COOKIES } from "@/lib/auth/config";
@@ -63,10 +63,18 @@ export async function apiUpload<T>(path: string, form: FormData, idempotencyKey:
   }
 }
 
+/** The visitor's address, so per-visitor rate limits in the API see the visitor, not this server. */
+async function visitorHeaders(): Promise<Record<string, string>> {
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for");
+  return forwarded ? { "X-Forwarded-For": forwarded } : {};
+}
+
 /** Public, unauthenticated GET (tracking links). Never sends the user's cookies or token. */
 export async function apiPublicGet<T>(path: string): Promise<ApiResult<T>> {
   try {
     const response = await fetch(`${apiBase()}/api/v1${path}`, {
+      headers: await visitorHeaders(),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
@@ -89,5 +97,22 @@ export async function apiFetchRaw(path: string): Promise<Response | null> {
     });
   } catch {
     return null;
+  }
+}
+
+/** Public, unauthenticated JSON POST (container lookup). Never sends the user's cookies or token. */
+export async function apiPublicPost<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+  try {
+    const response = await fetch(`${apiBase()}/api/v1${path}`, {
+      method: "POST",
+      headers: { ...(await visitorHeaders()), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const data: unknown = await response.json().catch(() => null);
+    return response.ok ? { ok: true, data: data as T } : toError(response.status, data, response);
+  } catch {
+    return UNREACHABLE;
   }
 }

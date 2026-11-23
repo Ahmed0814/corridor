@@ -11,7 +11,8 @@
     "portalDescription": "Track your shipments and documents.",
     "admin": "Platform admin",
     "adminDescription": "Tenants, users and configuration.",
-    "status": "System status"
+    "status": "System status",
+    "trackContainer": "Track a container"
   },
   "Area": {
     "notBuilt": "This area is not built yet. Screens arrive in Phases 3–6.",
@@ -371,7 +372,11 @@
         "good": "Good",
         "damaged": "Damaged",
         "needs_repair": "Needs repair"
-      }
+      },
+      "find": "Find a container",
+      "search": "Search",
+      "onMap": "See on live map",
+      "notFound": "No shipment with container {number}."
     },
     "team": {
       "title": "Team",
@@ -478,7 +483,10 @@
       "stale": "Last known position (old)",
       "offline": "No recent signal"
     },
-    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors."
+    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors.",
+    "findContainer": "Find my container",
+    "search": "Search",
+    "showAll": "Show all shipments"
   },
   "Track": {
     "heading": "Shipment tracking",
@@ -511,7 +519,21 @@
       "cancelled": "Cancelled"
     },
     "noPosition": "No position yet: it appears once the truck carrying this shipment sends one.",
-    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors."
+    "basemap": "Approximate area (about 1 km). Map data © OpenStreetMap contributors.",
+    "lookup": {
+      "title": "Track a container",
+      "intro": "Enter your container number and the shipment reference from your documents.",
+      "container": "Container number",
+      "reference": "Shipment reference",
+      "submit": "Track",
+      "why": "Both are needed: container numbers are printed on the containers, so the number alone does not show where yours is.",
+      "errors": {
+        "not_found": "No shipment matches this container number and reference. Check both and try again.",
+        "rate_limited": "Too many attempts. Wait a minute and try again.",
+        "invalid": "Enter a container number (4 letters + 7 digits) and the shipment reference.",
+        "unavailable": "Tracking is temporarily unavailable. Try again shortly."
+      }
+    }
   },
   "Mfa": {
     "title": "Set up your authenticator app",
